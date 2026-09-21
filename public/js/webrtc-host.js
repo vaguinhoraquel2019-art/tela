@@ -47,14 +47,20 @@ async function loadIceServers() {
   try {
     const res = await fetch('/api/ice-servers');
     const servers = await res.json();
-    iceConfig = { iceServers: servers, iceCandidatePoolSize: 10 };
-    console.log('[ICE] Servidores carregados:', servers.length);
+    if (Array.isArray(servers) && servers.length > 0) {
+      iceConfig = { iceServers: servers, iceCandidatePoolSize: 10 };
+      console.log('[ICE] Servidores carregados:', servers.length);
+    } else {
+      throw new Error('Lista vazia');
+    }
   } catch(e) {
-    console.warn('[ICE] Usando fallback padrão');
+    console.warn('[ICE] Erro ao carregar, usando fallback:', e.message);
     iceConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
       ],
       iceCandidatePoolSize: 10
     };
