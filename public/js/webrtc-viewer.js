@@ -204,7 +204,6 @@ function connectSocket() {
     console.log('[WebRTC] Recebeu offer de', from);
     hostId = from;
     try {
-      // Se já tem um peer estável com vídeo, ignora o offer duplicado
       if (pc && pc.connectionState === 'connected' && remoteVideo.srcObject) {
         console.log('[Offer] Ignorando offer duplicado — já conectado');
         return;
@@ -213,12 +212,8 @@ function connectSocket() {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-
-      // Aplica bitrate alto também no answer
-      const sdp = setBitrate(pc.localDescription.sdp, 4000);
-      await pc.setLocalDescription({ type: 'answer', sdp });
-
-      socket.emit('answer', { roomId, answer: { type: 'answer', sdp }, targetId: from });
+      // Envia o answer diretamente sem modificar o SDP
+      socket.emit('answer', { roomId, answer: pc.localDescription, targetId: from });
     } catch (e) {
       console.error('[Offer] Erro ao processar:', e.message);
     }

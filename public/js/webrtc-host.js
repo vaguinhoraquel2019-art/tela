@@ -268,12 +268,8 @@ async function sendOfferToViewer(viewerId) {
     const pc    = await createPeerForViewer(viewerId);
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
-    // Aumenta o bitrate máximo via SDP (4 Mbps para vídeo)
-    const sdp = setBitrate(pc.localDescription.sdp, 4000);
-    await pc.setLocalDescription({ type: 'offer', sdp });
-
-    socket.emit('offer', { roomId, offer: { type: 'offer', sdp }, targetId: viewerId });
+    // Envia o offer diretamente sem modificar o SDP
+    socket.emit('offer', { roomId, offer: pc.localDescription, targetId: viewerId });
   } catch (e) {
     console.error('[Offer] Erro ao criar offer para', viewerId, e);
   }
