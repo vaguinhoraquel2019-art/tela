@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizando Sessão — SEU NOME AQUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { overflow: hidden; height: 100vh; display: flex; flex-direction: column; background: #000; }
+
+    /* ── Topbar mínima ── */
+    .viewer-topbar {
+      height: 52px;
+      background: rgba(15,23,42,.9);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+    .viewer-topbar-left  { display: flex; align-items: center; gap: 12px; }
+    .viewer-topbar-right { display: flex; align-items: center; gap: 10px; }
+    .brand-sm-viewer {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: .9rem; color: var(--text-primary);
+      text-decoration: none;
+    }
+    .brand-sm-viewer .brand-logo { width: 28px; height: 28px; font-size: .5rem; }
+
+    /* ── Área de vídeo ── */
+    .viewer-video-wrap {
+      flex: 1;
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #remoteVideo {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    /* ── Telas de estado ── */
+    .state-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      gap: 16px;
+      position: absolute;
+      inset: 0;
+      background: #000;
+    }
+    .state-screen.active { display: flex; }
+    .state-icon { font-size: 4rem; opacity: .7; }
+    .state-screen h3 { color: var(--text-primary); font-size: 1.3rem; }
+    .state-screen p  { color: var(--text-secondary); font-size: .92rem; max-width: 340px; }
+
+    /* Spinner dentro do estado */
+    .state-spinner {
+      width: 52px; height: 52px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-bottom: 8px;
+    }
+
+    /* ── Live badge e timer ── */
+    .viewer-live-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239,68,68,.85);
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .05em;
+    }
+    .viewer-live-badge.show { display: flex; }
+
+    .viewer-session-pill {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius-full);
+      padding: 4px 12px;
+      font-size: .75rem;
+      color: rgba(255,255,255,.5);
+      font-family: 'Courier New', monospace;
+      letter-spacing: .05em;
+    }
+
+    /* Controles viewer (fullscreen) */
+    .viewer-controls-float {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 16px 24px;
+      background: linear-gradient(transparent, rgba(0,0,0,.7));
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .viewer-video-wrap:hover .viewer-controls-float { opacity: 1; }
+
+    .vctrl-btn {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      backdrop-filter: blur(8px);
+    }
+    .vctrl-btn:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.35); }
+
+    /* Tela cheia */
+    :fullscreen .viewer-topbar { display: none; }
+    :-webkit-full-screen .viewer-topbar { display: none; }
+
+    /* ── Responsivo ── */
+    @media (max-width: 600px) {
+      .viewer-topbar { padding: 0 12px; height: 48px; }
+      .viewer-session-pill { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ TOP BAR ═══════════════════════ -->
+<div class="viewer-topbar" id="viewer-topbar">
+  <div class="viewer-topbar-left">
+    <a href="/" class="brand-sm-viewer" id="viewer-brand">
+      <div class="brand-logo" id="viewer-logo">SUA<br>LOGO<br>AQUI</div>
+      <span id="viewer-org-name">SEU NOME AQUI</span>
+    </a>
+    <div class="viewer-session-pill" id="viewer-session-pill">ID: —</div>
+    <div class="viewer-live-badge" id="viewer-live-badge">
+      <div class="dot-pulse" style="background:#fff;"></div>
+      AO VIVO
+    </div>
+  </div>
+  <div class="viewer-topbar-right">
+    <span style="font-size:.8rem; color:var(--text-muted);" id="viewer-count-label">👥 —</span>
+    <button class="btn btn-ghost btn-sm" id="btn-fullscreen" title="Tela cheia">⛶</button>
+    <a href="/" class="btn btn-secondary btn-sm">← Sair</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════ VÍDEO ═══════════════════════════ -->
+<div class="viewer-video-wrap" id="viewer-video-wrap">
+
+  <video id="remoteVideo" autoplay playsinline></video>
+
+  <!-- Estado: conectando -->
+  <div class="state-screen active" id="state-connecting">
+    <div class="state-spinner"></div>
+    <h3>Conectando à sessão...</h3>
+    <p>Aguarde enquanto estabelecemos a conexão com o responsável.</p>
+  </div>
+
+  <!-- Estado: aguardando transmissão -->
+  <div class="state-screen" id="state-waiting">
+    <div class="state-icon">⏳</div>
+    <h3>Aguardando transmissão</h3>
+    <p>O responsável ainda não iniciou o compartilhamento de tela. Aguarde um momento.</p>
+    <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+      <div class="spinner"></div>
+      <span style="font-size:.85rem; color:var(--text-muted);">Monitorando conexão...</span>
+    </div>
+  </div>
+
+  <!-- Estado: não encontrado -->
+  <div class="state-screen" id="state-not-found">
+    <div class="state-icon">🔍</div>
+    <h3>Sessão não encontrada</h3>
+    <p>O link pode estar incorreto ou a sessão não existe. Verifique com o responsável.</p>
+    <a href="/" class="btn btn-primary" style="margin-top:8px;">← Voltar ao Início</a>
+  </div>
+
+  <!-- Estado: sessão encerrada -->
+  <div class="state-screen" id="state-ended">
+    <div class="state-icon">🎬</div>
+    <h3>Sessão Encerrada</h3>
+    <p id="ended-reason-viewer">A transmissão foi encerrada pelo responsável.</p>
+    <a href="/" class="btn btn-primary" style="margin-top:8px;">← Voltar ao Início</a>
+  </div>
+
+  <!-- Estado: erro de conexão -->
+  <div class="state-screen" id="state-error">
+    <div class="state-icon">⚠️</div>
+    <h3>Erro de Conexão</h3>
+    <p id="error-msg-viewer">Não foi possível conectar à sessão. Verifique sua internet e tente novamente.</p>
+    <button class="btn btn-primary" id="btn-retry-viewer" style="margin-top:8px;">🔄 Tentar Novamente</button>
+  </div>
+
+  <!-- Controles flutuantes -->
+  <div class="viewer-controls-float">
+    <button class="vctrl-btn" id="btn-pip" title="Picture-in-picture">🗗</button>
+    <button class="vctrl-btn" id="btn-fullscreen-float" title="Tela cheia">⛶</button>
+  </div>
+
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/webrtc-viewer.js"></script>
+</body>
+</html>

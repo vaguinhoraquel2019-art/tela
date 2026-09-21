@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sessão Ativa — SEU NOME AQUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Top bar ── */
+    .room-topbar {
+      height: 60px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .topbar-left  { display: flex; align-items: center; gap: 14px; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .brand-sm {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: .95rem; color: var(--text-primary);
+      text-decoration: none;
+    }
+    .brand-sm .brand-logo { width: 32px; height: 32px; font-size: .55rem; }
+    .session-id-pill {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      font-size: .8rem;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+      letter-spacing: .05em;
+    }
+
+    /* ── Layout principal ── */
+    .room-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      overflow: hidden;
+    }
+
+    /* ── Área de vídeo ── */
+    .video-area {
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #localVideo {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+    .video-placeholder {
+      text-align: center;
+      padding: 40px;
+    }
+    .video-placeholder-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: .4;
+    }
+    .video-placeholder h3 {
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+    .video-placeholder p {
+      font-size: .88rem;
+      color: var(--text-muted);
+      max-width: 280px;
+    }
+
+    /* Controles flutuantes sobre o vídeo */
+    .video-controls {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 20px 24px;
+      background: linear-gradient(transparent, rgba(0,0,0,.8));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .video-area:hover .video-controls { opacity: 1; }
+    .video-area.sharing .video-controls { opacity: 1; }
+
+    .ctrl-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.2);
+      background: rgba(0,0,0,.6);
+      color: #fff;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.4); }
+    .ctrl-btn.active { background: var(--primary); border-color: var(--primary); }
+    .ctrl-btn.danger { background: var(--danger); border-color: var(--danger); }
+    .ctrl-btn.danger:hover { background: var(--danger-dark); }
+    .ctrl-btn.large { width: 56px; height: 56px; font-size: 1.25rem; }
+
+    /* Live badge sobre o vídeo */
+    .video-live-badge {
+      position: absolute;
+      top: 16px; left: 16px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239,68,68,.85);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: .8rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .06em;
+      backdrop-filter: blur(8px);
+    }
+    .video-live-badge.show { display: flex; }
+    .video-timer {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: rgba(0,0,0,.65);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-size: .8rem;
+      color: var(--text-secondary);
+      display: none;
+      backdrop-filter: blur(8px);
+    }
+    .video-timer.show { display: block; font-variant-numeric: tabular-nums; }
+
+    /* ── Sidebar ── */
+    .room-sidebar {
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-section:last-child { border-bottom: none; flex: 1; overflow-y: auto; }
+    .sidebar-title {
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* Link da sessão */
+    .session-link-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: .78rem;
+      color: var(--text-secondary);
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 10px;
+      user-select: all;
+    }
+
+    /* Viewers */
+    .viewers-list { display: flex; flex-direction: column; gap: 8px; }
+    .viewer-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      font-size: .85rem;
+    }
+    .viewer-avatar {
+      width: 28px; height: 28px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .viewer-name { flex: 1; color: var(--text-primary); }
+    .viewers-empty { color: var(--text-muted); font-size: .85rem; text-align: center; padding: 20px 0; }
+
+    /* Info da sessão */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .85rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--text-muted); }
+    .info-value { color: var(--text-primary); font-weight: 500; text-align: right; }
+
+    /* ── Tela de fim de sessão ── */
+    .ended-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-base);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 200;
+      text-align: center;
+      padding: 40px;
+    }
+    .ended-screen.show { display: flex; }
+    .ended-icon { font-size: 4rem; }
+
+    /* ── Responsivo ── */
+    @media (max-width: 900px) {
+      .room-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      .room-sidebar { border-left: none; border-top: 1px solid var(--border); max-height: 240px; overflow-y: auto; }
+    }
+    @media (max-width: 600px) {
+      .room-topbar { padding: 0 12px; }
+      .session-id-pill { display: none; }
+      .topbar-title { font-size: .9rem; }
+      .room-sidebar { max-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading-screen">
+  <div class="spinner spinner-lg"></div>
+  <p>Preparando sua sessão...</p>
+</div>
+
+<!-- Tela de sessão encerrada -->
+<div class="ended-screen" id="ended-screen">
+  <div class="ended-icon">🎬</div>
+  <h2>Sessão Encerrada</h2>
+  <p style="color:var(--text-secondary); max-width:380px;" id="ended-reason">A sessão foi encerrada.</p>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
+    <a href="/" class="btn btn-secondary">← Voltar ao Início</a>
+    <button class="btn btn-primary" id="btn-new-after-end">▶ Nova Sessão</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TOP BAR ═══════════════════════════ -->
+<div class="room-topbar" id="room-topbar">
+  <div class="topbar-left">
+    <a href="/" class="brand-sm" id="topbar-brand">
+      <div class="brand-logo" id="topbar-logo">SUA<br>LOGO<br>AQUI</div>
+      <span id="topbar-name">SEU NOME AQUI</span>
+    </a>
+    <div class="session-id-pill" id="session-id-pill">ID: —</div>
+    <div class="badge badge-live" id="status-badge" style="display:none;">
+      <div class="dot-pulse"></div> Ao Vivo
+    </div>
+    <div class="badge badge-waiting" id="status-waiting">
+      ⏳ Aguardando
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span style="font-size:.85rem; color:var(--text-muted);" id="viewer-count-top">👥 0 espectadores</span>
+    <button class="btn btn-danger btn-sm" id="btn-end-session">⬛ Encerrar Sessão</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ LAYOUT ═══════════════════════════ -->
+<div class="room-layout" id="room-layout">
+
+  <!-- Vídeo -->
+  <div class="video-area" id="video-area">
+    <video id="localVideo" autoplay muted playsinline></video>
+
+    <div class="video-placeholder" id="video-placeholder">
+      <div class="video-placeholder-icon">🖥️</div>
+      <h3>Sua tela aparecerá aqui</h3>
+      <p>Clique em "Compartilhar Tela" para iniciar a transmissão ao vivo.</p>
+      <button class="btn btn-primary btn-lg" id="btn-start-share" style="margin-top:24px;">
+        ▶&ensp;Compartilhar Tela
+      </button>
+    </div>
+
+    <div class="video-live-badge" id="live-badge">
+      <div class="dot-pulse" style="background:#fff;"></div>
+      AO VIVO
+    </div>
+    <div class="video-timer" id="video-timer">00:00:00</div>
+
+    <div class="video-controls" id="video-controls">
+      <button class="ctrl-btn" id="ctrl-mic" title="Microfone">🎙️</button>
+      <button class="ctrl-btn" id="ctrl-cam" title="Câmera">📷</button>
+      <button class="ctrl-btn large active" id="ctrl-screen" title="Tela">🖥️</button>
+      <button class="ctrl-btn danger large" id="ctrl-stop" title="Parar transmissão">⬛</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="room-sidebar" id="room-sidebar">
+
+    <!-- Link da sessão -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">🔗 Link da Sessão</div>
+      <div class="session-link-box" id="session-link-display">—</div>
+      <button class="btn btn-secondary w-full btn-sm" id="btn-copy-link">📋&ensp;Copiar Link</button>
+    </div>
+
+    <!-- Informações -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">📊 Informações</div>
+      <div class="info-row">
+        <span class="info-label">ID da Sessão</span>
+        <span class="info-value" id="info-room-id">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-value" id="info-status">Preparando</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Criada em</span>
+        <span class="info-value" id="info-created">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Duração</span>
+        <span class="info-value" id="info-duration">00:00</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Espectadores</span>
+        <span class="info-value" id="info-viewers">0</span>
+      </div>
+    </div>
+
+    <!-- Espectadores -->
+    <div class="sidebar-section" style="flex:1; overflow-y:auto;">
+      <div class="sidebar-title">👥 Espectadores</div>
+      <div class="viewers-list" id="viewers-list">
+        <div class="viewers-empty" id="viewers-empty">Nenhum espectador conectado ainda.</div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Modal confirmar encerramento -->
+<div class="modal-overlay" id="modal-end">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">⬛ Encerrar Sessão</h3>
+      <button class="modal-close" id="modal-end-close">✕</button>
+    </div>
+    <p style="color:var(--text-secondary);">
+      Tem certeza que deseja encerrar esta sessão?<br>
+      <strong style="color:var(--text-primary);">Todos os espectadores serão desconectados.</strong>
+    </p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modal-end-cancel">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-end">⬛&ensp;Encerrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/webrtc-host.js"></script>
+</body>
+</html>

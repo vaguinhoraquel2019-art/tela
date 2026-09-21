@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEU NOME AQUI — Compartilhamento de Tela</title>
+  <meta name="description" content="Plataforma de compartilhamento de tela segura, simples e personalizável para a sua organização." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════ NAVBAR ═══════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="brand" id="brand-link">
+      <div class="brand-logo" id="nav-logo">SUA<br>LOGO<br>AQUI</div>
+      <span id="nav-name">SEU NOME AQUI</span>
+    </a>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#inicio" class="active">Início</a></li>
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#como-funciona">Como Funciona</a></li>
+      <li><a href="#contato">Contato</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-ghost btn-sm">Entrar</a>
+      <button class="btn btn-primary btn-sm" id="btn-new-session">
+        ▶ Iniciar Sessão
+      </button>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ HERO ═══════════════════════════ -->
+<section class="hero" id="inicio">
+  <div class="hero-grid">
+    <!-- Conteúdo -->
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span>●</span>
+        <span id="hero-eyebrow-text">SEU NOME AQUI</span>
+      </div>
+
+      <h1 class="hero-title">
+        Compartilhe sua tela<br>
+        com <span class="highlight">facilidade</span>
+      </h1>
+
+      <p class="hero-desc" id="hero-desc">
+        Conecte pessoas, compartilhe informações e mantenha tudo em tempo real.
+        Nosso sistema de compartilhamento de tela é simples, seguro e totalmente
+        personalizado para a sua organização.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg" id="btn-start-hero">
+          ▶&ensp;Iniciar Sessão
+        </button>
+        <button class="btn btn-secondary btn-lg" id="btn-access-hero-open">
+          ⬛&ensp;Acessar Sessão
+        </button>
+      </div>
+
+      <!-- Caixa de acesso rápido -->
+      <div class="hero-access" id="access-box" style="display:none; margin-top:20px;">
+        <span style="font-size:1rem; flex-shrink:0;">🔗</span>
+        <input
+          type="text"
+          id="room-id-input"
+          placeholder="Cole o ID ou link da sessão aqui..."
+          maxlength="80"
+          autocomplete="off"
+        />
+        <button class="btn btn-primary btn-sm" id="btn-join-session">Entrar</button>
+      </div>
+    </div>
+
+    <!-- Visual / Mockup -->
+    <div class="hero-visual">
+      <div class="screen-mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="mockup-url" id="mockup-url-text">seunomeaqui.com/sessao/ABC123</div>
+        </div>
+        <div class="mockup-screen">
+          <div class="mockup-grid-lines"></div>
+          <div class="live-indicator">
+            <div class="dot-pulse"></div>
+            AO VIVO
+          </div>
+          <div class="viewer-count">👥 3 visualizando</div>
+          <div class="mockup-screen-content">
+            <div class="mockup-screen-icon">🖥️</div>
+            <p style="color:var(--text-secondary); font-size:.85rem;">Tela sendo transmitida</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards flutuantes decorativos -->
+      <div class="hero-stat-cards" style="display:flex; gap:12px; margin-top:14px;">
+        <div class="card" style="flex:1; padding:14px; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:var(--primary-light);" id="stat-sessions">—</div>
+          <div style="font-size:.75rem; color:var(--text-muted);">Sessões hoje</div>
+        </div>
+        <div class="card" style="flex:1; padding:14px; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:var(--success);" id="stat-live">—</div>
+          <div style="font-size:.75rem; color:var(--text-muted);">Ao vivo agora</div>
+        </div>
+        <div class="card" style="flex:1; padding:14px; text-align:center;">
+          <div style="font-size:1.5rem; font-weight:800; color:var(--accent);">🔒</div>
+          <div style="font-size:.75rem; color:var(--text-muted);">Conexão segura</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FEATURES ═══════════════════════════ -->
+<section class="features" id="sobre">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Por que usar</div>
+      <h2>Tudo que você precisa para<br>compartilhar sua tela</h2>
+      <p style="margin-top:12px; max-width:520px; margin-left:auto; margin-right:auto;">
+        Uma solução completa e personalizada para a sua organização,
+        sem necessidade de downloads ou instalações.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon blue">⚡</div>
+        <h4>Rápido e Simples</h4>
+        <p>Inicie sua sessão em poucos cliques, sem complicação. Funciona direto no navegador, sem instalações.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon cyan">🔒</div>
+        <h4>Seguro</h4>
+        <p>Suas informações protegidas com tecnologia de ponta. Sessões com IDs exclusivos e controle de acesso.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">📱</div>
+        <h4>Responsivo</h4>
+        <p>Funciona perfeitamente em qualquer dispositivo — computador, tablet ou celular, sem perder qualidade.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon purple">🎨</div>
+        <h4>Personalizável</h4>
+        <p>Com a identidade da sua organização. Cores, logo, nome e textos totalmente configuráveis.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ COMO FUNCIONA ═══════════════════════ -->
+<section class="how-it-works" id="como-funciona">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Como funciona</div>
+      <h2>Em 4 passos simples</h2>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h4>Inicie a sessão</h4>
+        <p>Clique em "Iniciar Sessão" e o sistema criará uma sala exclusiva para você.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h4>Compartilhe a tela</h4>
+        <p>O navegador solicitará permissão. Escolha o que deseja transmitir.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h4>Copie o link</h4>
+        <p>O sistema gera um link exclusivo. Copie e envie para quem precisar.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <h4>Visualização em tempo real</h4>
+        <p>Os espectadores acessam o link e assistem à transmissão ao vivo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ CTA ═══════════════════════════ -->
+<section style="padding:80px 24px;" id="contato">
+  <div class="container">
+    <div class="card" style="text-align:center; padding:56px 32px; background:linear-gradient(135deg, rgba(37,99,235,.1) 0%, rgba(6,182,212,.05) 100%); border-color:rgba(37,99,235,.2);">
+      <h2 style="margin-bottom:16px;">Pronto para começar?</h2>
+      <p style="max-width:480px; margin:0 auto 32px;">
+        Inicie uma sessão agora e compartilhe sua tela com quem precisar,
+        de forma simples e segura.
+      </p>
+      <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-lg" id="btn-cta-start">▶&ensp;Iniciar Sessão Agora</button>
+        <a href="/login" class="btn btn-secondary btn-lg">⚙️&ensp;Painel Admin</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand-logo" id="footer-logo" style="width:32px; height:32px; font-size:.55rem;">SUA<br>LOGO<br>AQUI</div>
+      <div class="footer-info">
+        <strong id="footer-name">SEU NOME AQUI</strong>
+        <p id="footer-tagline">Conectando pessoas onde você estiver.</p>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="#inicio">Início</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#como-funciona">Como Funciona</a>
+      <a href="/login">Admin</a>
+    </div>
+  </div>
+  <div class="footer-copy">
+    <p>© <span id="footer-year"></span> <span id="footer-copy-name">SEU NOME AQUI</span>. Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+<!-- ═══════════════════════ MODAL: Criar Sessão ═══════════════════════ -->
+<div class="modal-overlay" id="modal-create">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">▶ Iniciar Nova Sessão</h3>
+      <button class="modal-close" id="modal-create-close">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); margin-bottom:24px; font-size:.9rem;">
+      Uma sala exclusiva será criada. Você receberá um link para compartilhar com os espectadores.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Seu nome (opcional)</label>
+      <input type="text" class="form-control" id="host-name-input" placeholder="Como deseja ser identificado?" maxlength="40" />
+    </div>
+    <div id="create-status" style="display:none;" class="card" style="background:rgba(37,99,235,.08); border-color:rgba(37,99,235,.2); padding:16px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="spinner"></div>
+        <span style="font-size:.9rem; color:var(--text-secondary);">Criando sua sessão...</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modal-create-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-create">▶&ensp;Criar Sessão</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG & UTILS
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+function showToast(msg, type = 'info', duration = 4000) {
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+// Carrega configurações do servidor
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    if (cfg.orgName) {
+      document.title = cfg.orgName + ' — Compartilhamento de Tela';
+      document.querySelectorAll('#nav-name, #hero-eyebrow-text, #footer-name, #footer-copy-name')
+        .forEach(el => el.textContent = cfg.orgName);
+    }
+    if (cfg.tagline) {
+      document.getElementById('footer-tagline').textContent = cfg.tagline;
+    }
+    if (cfg.description) {
+      document.getElementById('hero-desc').textContent = cfg.description;
+    }
+    if (cfg.primaryColor) {
+      document.documentElement.style.setProperty('--primary', cfg.primaryColor);
+      document.documentElement.style.setProperty('--primary-dark', cfg.accentColor || cfg.primaryColor);
+    }
+    if (cfg.orgLogo) {
+      document.querySelectorAll('#nav-logo, #footer-logo').forEach(el => {
+        el.innerHTML = `<img src="${cfg.orgLogo}" alt="Logo" />`;
+        el.style.background = 'transparent';
+        el.style.border = 'none';
+        el.style.padding = '0';
+      });
+    }
+  } catch(e) { /* sem config */ }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/admin/stats').catch(() => null);
+    if (!res || !res.ok) return;
+    const s = await res.json();
+    document.getElementById('stat-sessions').textContent = s.totalSessions ?? 0;
+    document.getElementById('stat-live').textContent     = s.activeSessions ?? 0;
+  } catch(e) {}
+}
+
+loadConfig();
+loadStats();
+
+// ═══════════════════════════════════════════════════════════════
+// HAMBURGER
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('nav-links').classList.toggle('open');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL CRIAR SESSÃO
+// ═══════════════════════════════════════════════════════════════
+const modalCreate = document.getElementById('modal-create');
+
+function openCreateModal() { modalCreate.classList.add('open'); }
+function closeCreateModal() { modalCreate.classList.remove('open'); }
+
+document.getElementById('btn-new-session').addEventListener('click', openCreateModal);
+document.getElementById('btn-start-hero').addEventListener('click', openCreateModal);
+document.getElementById('btn-cta-start').addEventListener('click', openCreateModal);
+document.getElementById('modal-create-close').addEventListener('click', closeCreateModal);
+document.getElementById('modal-create-cancel').addEventListener('click', closeCreateModal);
+modalCreate.addEventListener('click', e => { if (e.target === modalCreate) closeCreateModal(); });
+
+document.getElementById('btn-confirm-create').addEventListener('click', async () => {
+  const btn    = document.getElementById('btn-confirm-create');
+  const status = document.getElementById('create-status');
+  const name   = document.getElementById('host-name-input').value.trim() || 'Responsável';
+
+  btn.disabled = true;
+  status.style.display = 'block';
+
+  try {
+    const res  = await fetch('/api/rooms/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guestName: name })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeCreateModal();
+      window.location.href = `/room/${data.roomId}`;
+    } else {
+      showToast('Não foi possível criar a sessão.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro ao conectar ao servidor.', 'error');
+  } finally {
+    btn.disabled = false;
+    status.style.display = 'none';
+  }
+});
+
+// Enter no campo de nome
+document.getElementById('host-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-confirm-create').click();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ACESSAR SESSÃO
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btn-access-hero-open').addEventListener('click', () => {
+  const box = document.getElementById('access-box');
+  box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+  if (box.style.display === 'flex') {
+    document.getElementById('room-id-input').focus();
+  }
+});
+
+document.getElementById('btn-join-session').addEventListener('click', joinSession);
+document.getElementById('room-id-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinSession();
+});
+
+async function joinSession() {
+  let val = document.getElementById('room-id-input').value.trim();
+  if (!val) { showToast('Informe o ID ou link da sessão.', 'warning'); return; }
+
+  // Extrai ID se for URL completa
+  const match = val.match(/\/(?:room|view)\/([A-Z0-9]+)/i) || val.match(/([A-Z0-9]{8,12})/i);
+  const roomId = match ? match[1].toUpperCase() : val.toUpperCase();
+
+  try {
+    const res  = await fetch(`/api/rooms/${roomId}/exists`);
+    const data = await res.json();
+    if (data.exists) {
+      window.location.href = `/view/${roomId}`;
+    } else {
+      showToast('Sessão não encontrada. Verifique o ID.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro ao verificar a sessão.', 'error');
+  }
+}
+
+// Smooth scroll nos links do menu
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('nav-links').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

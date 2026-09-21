@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — SEU NOME AQUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    /* ── Painel esquerdo (visual) ── */
+    .login-panel-left {
+      flex: 1;
+      background: linear-gradient(135deg, #0a1628 0%, #0f2040 50%, #0a1a35 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .login-panel-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 30% 40%, rgba(37,99,235,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(6,182,212,.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .left-grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(37,99,235,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .left-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 380px;
+    }
+    .left-logo-wrap {
+      width: 72px; height: 72px;
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      line-height: 1.3;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 40px rgba(37,99,235,.5);
+      overflow: hidden;
+    }
+    .left-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .left-content h2 {
+      font-size: 1.75rem;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .left-content p {
+      font-size: .9rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* Features list no painel esquerdo */
+    .left-features {
+      list-style: none;
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+    }
+    .left-features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .88rem;
+      color: var(--text-secondary);
+    }
+    .left-features li .feat-icon {
+      width: 32px; height: 32px;
+      background: rgba(37,99,235,.15);
+      border: 1px solid rgba(37,99,235,.25);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+
+    /* Mockup mini no painel esquerdo */
+    .left-mockup {
+      margin-top: 36px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+    }
+    .left-mockup-bar {
+      background: var(--bg-elevated);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .left-mockup-dots { display: flex; gap: 5px; }
+    .left-mockup-dots span { width: 8px; height: 8px; border-radius: 50%; }
+    .left-mockup-dots span:nth-child(1) { background: #ef4444; }
+    .left-mockup-dots span:nth-child(2) { background: #f59e0b; }
+    .left-mockup-dots span:nth-child(3) { background: #10b981; }
+    .left-mockup-url {
+      flex: 1; background: var(--bg-base); border-radius: 4px;
+      padding: 3px 8px; font-size: .68rem; color: var(--text-muted); text-align: center;
+    }
+    .left-mockup-body {
+      padding: 16px;
+      display: flex;
+      gap: 10px;
+    }
+    .mockup-sidebar-mini {
+      width: 70px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .mockup-menu-item {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--border);
+    }
+    .mockup-menu-item.active { background: var(--primary); }
+    .mockup-content-mini {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mockup-stat-row {
+      display: flex;
+      gap: 6px;
+    }
+    .mockup-stat-card {
+      flex: 1;
+      height: 30px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .mockup-line { height: 7px; background: var(--border); border-radius: 4px; width: 80%; }
+    .mockup-line.short { width: 50%; }
+
+    /* ── Painel direito (form) ── */
+    .login-panel-right {
+      width: 460px;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 48px;
+      border-left: 1px solid var(--border);
+      position: relative;
+    }
+    .login-form-wrap { width: 100%; max-width: 360px; }
+
+    .login-logo-sm {
+      width: 48px; height: 48px;
+      background: var(--primary);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .6rem; font-weight: 700; color: #fff;
+      text-align: center; line-height: 1.3;
+      margin: 0 auto 20px;
+      overflow: hidden;
+    }
+    .login-logo-sm img { width: 100%; height: 100%; object-fit: contain; }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .login-header h2 { font-size: 1.6rem; margin-bottom: 6px; }
+    .login-header p   { font-size: .88rem; color: var(--text-muted); }
+
+    .input-icon-wrap {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+    .input-with-icon { padding-left: 42px !important; }
+    .input-toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text-muted);
+      font-size: .9rem;
+      cursor: pointer;
+      padding: 4px;
+      transition: color var(--transition);
+    }
+    .input-toggle-pw:hover { color: var(--text-primary); }
+
+    .login-error {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: .88rem;
+      color: #fca5a5;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-error.show { display: flex; }
+
+    .login-footer-note {
+      text-align: center;
+      margin-top: 28px;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    .login-footer-note a { color: var(--primary-light); }
+
+    .login-page-footer {
+      position: absolute;
+      bottom: 24px;
+      text-align: center;
+      font-size: .75rem;
+      color: var(--text-muted);
+      width: 100%;
+    }
+
+    /* ── Responsivo ── */
+    @media (max-width: 900px) {
+      .login-panel-left  { display: none; }
+      .login-panel-right { width: 100%; border-left: none; }
+    }
+    @media (max-width: 480px) {
+      .login-panel-right { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ PAINEL ESQUERDO ═══════════════════════ -->
+<div class="login-panel-left">
+  <div class="left-grid-lines"></div>
+  <div class="left-content">
+    <div class="left-logo-wrap" id="left-logo">SUA<br>LOGO<br>AQUI</div>
+    <h2 id="left-org-name">SEU NOME AQUI</h2>
+    <p id="left-tagline">
+      Plataforma de compartilhamento de tela segura e personalizada para a sua organização.
+    </p>
+
+    <ul class="left-features">
+      <li>
+        <div class="feat-icon">🖥️</div>
+        <span>Compartilhe sua tela em tempo real</span>
+      </li>
+      <li>
+        <div class="feat-icon">🔒</div>
+        <span>Sessões seguras com IDs exclusivos</span>
+      </li>
+      <li>
+        <div class="feat-icon">⚙️</div>
+        <span>Painel administrativo completo</span>
+      </li>
+      <li>
+        <div class="feat-icon">🎨</div>
+        <span>Personalizável para sua identidade visual</span>
+      </li>
+    </ul>
+
+    <!-- Mini mockup do dashboard -->
+    <div class="left-mockup">
+      <div class="left-mockup-bar">
+        <div class="left-mockup-dots"><span></span><span></span><span></span></div>
+        <div class="left-mockup-url" id="left-mockup-url">seunomeaqui.com/admin</div>
+      </div>
+      <div class="left-mockup-body">
+        <div class="mockup-sidebar-mini">
+          <div class="mockup-menu-item active"></div>
+          <div class="mockup-menu-item"></div>
+          <div class="mockup-menu-item"></div>
+          <div class="mockup-menu-item"></div>
+          <div class="mockup-menu-item"></div>
+        </div>
+        <div class="mockup-content-mini">
+          <div class="mockup-stat-row">
+            <div class="mockup-stat-card"></div>
+            <div class="mockup-stat-card"></div>
+            <div class="mockup-stat-card"></div>
+          </div>
+          <div class="mockup-line"></div>
+          <div class="mockup-line short"></div>
+          <div class="mockup-stat-row">
+            <div class="mockup-stat-card" style="height:40px;"></div>
+            <div class="mockup-stat-card" style="height:40px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PAINEL DIREITO ═══════════════════════ -->
+<div class="login-panel-right">
+  <div class="login-form-wrap">
+
+    <div class="login-logo-sm" id="right-logo">SUA<br>LOGO<br>AQUI</div>
+
+    <div class="login-header">
+      <h2>Acessar sua conta</h2>
+      <p id="right-org-name">SEU NOME AQUI</p>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div class="login-error" id="login-error">
+      <span>⚠️</span>
+      <span id="login-error-msg">Usuário ou senha inválidos.</span>
+    </div>
+
+    <!-- Formulário -->
+    <form id="login-form" autocomplete="on">
+      <div class="form-group">
+        <label class="form-label" for="username">Usuário ou e-mail</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">👤</span>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="form-control input-with-icon"
+            placeholder="Digite seu usuário"
+            required
+            autocomplete="username"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="form-label" for="password" style="margin-bottom:0;">Senha</label>
+          <a href="#" id="forgot-link" style="font-size:.8rem; color:var(--primary-light);">Esqueceu a senha?</a>
+        </div>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔒</span>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="form-control input-with-icon"
+            placeholder="Digite sua senha"
+            required
+            autocomplete="current-password"
+            style="padding-right:44px;"
+          />
+          <button type="button" class="input-toggle-pw" id="toggle-pw" aria-label="Mostrar senha">👁️</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-login" style="margin-top:8px;">
+        Entrar
+      </button>
+    </form>
+
+    <div class="login-footer-note">
+      <a href="/">← Voltar ao Início</a>
+    </div>
+
+  </div>
+
+  <!-- Rodapé da página -->
+  <div class="login-page-footer">
+    <span id="login-copy-name">SEU NOME AQUI</span> © <span id="login-year"></span>. Todos os direitos reservados.
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── Ano e personalização ─────────────────────────────────────────
+document.getElementById('login-year').textContent = new Date().getFullYear();
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    if (cfg.orgName) {
+      document.title = `Entrar — ${cfg.orgName}`;
+      document.querySelectorAll('#left-org-name, #right-org-name, #login-copy-name')
+        .forEach(el => el.textContent = cfg.orgName);
+    }
+    if (cfg.tagline) {
+      document.getElementById('left-tagline').textContent = cfg.tagline;
+    }
+    if (cfg.primaryColor) {
+      document.documentElement.style.setProperty('--primary', cfg.primaryColor);
+      document.documentElement.style.setProperty('--primary-dark', cfg.accentColor || cfg.primaryColor);
+    }
+    if (cfg.orgLogo) {
+      ['left-logo', 'right-logo'].forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = `<img src="${cfg.orgLogo}" alt="Logo" />`;
+        el.style.cssText = 'background:transparent;border:none;padding:0;box-shadow:none;';
+      });
+    }
+  } catch(e) {}
+}
+loadConfig();
+
+// ── Verificar se já está logado ──────────────────────────────────
+fetch('/api/auth/me').then(r => {
+  if (r.ok) window.location.href = '/admin';
+}).catch(() => {});
+
+// ── Toggle senha ─────────────────────────────────────────────────
+document.getElementById('toggle-pw').addEventListener('click', function() {
+  const input = document.getElementById('password');
+  const show  = input.type === 'password';
+  input.type  = show ? 'text' : 'password';
+  this.textContent = show ? '🙈' : '👁️';
+});
+
+// ── Forgot password (placeholder) ────────────────────────────────
+document.getElementById('forgot-link').addEventListener('click', e => {
+  e.preventDefault();
+  showToast('Entre em contato com o administrador do sistema.', 'info');
+});
+
+// ── Toast ────────────────────────────────────────────────────────
+function showToast(msg, type = 'info', duration = 4000) {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+// ── Login ────────────────────────────────────────────────────────
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const btn      = document.getElementById('btn-login');
+  const errorBox = document.getElementById('login-error');
+  const errorMsg = document.getElementById('login-error-msg');
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  errorBox.classList.remove('show');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>&ensp;Entrando...';
+
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showToast('Login realizado com sucesso!', 'success', 2000);
+      btn.innerHTML = '✅ Redirecionando...';
+      setTimeout(() => { window.location.href = '/admin'; }, 800);
+    } else {
+      const msg = data.error || 'Usuário ou senha inválidos.';
+      errorMsg.textContent = msg;
+      errorBox.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = 'Entrar';
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  } catch(err) {
+    errorMsg.textContent = 'Erro de conexão. Tente novamente.';
+    errorBox.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Entrar';
+  }
+});
+</script>
+</body>
+</html>
