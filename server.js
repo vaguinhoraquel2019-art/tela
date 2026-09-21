@@ -1,4 +1,5 @@
 const express = require('express');
+const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
@@ -27,10 +28,17 @@ app.use(session({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── Modo do site ─────────────────────────────────────────────────────────────
+// IS_CHILD_SITE=true → site filho (sem OWNER, sem criar sites)
+// SITE_ID → identificador único deste site (gerado automaticamente se não definido)
+const IS_CHILD_SITE = process.env.IS_CHILD_SITE === 'true';
+const SITE_ID       = process.env.SITE_ID || 'main';
+
 // ─── Estado em memória ───────────────────────────────────────────────────────
-const rooms   = new Map(); // roomId → RoomData
-const users   = new Map(); // username → UserData
-const roles   = new Map(); // roleId  → RoleData
+const rooms      = new Map(); // roomId → RoomData
+const users      = new Map(); // username → UserData
+const roles      = new Map(); // roleId  → RoleData
+const managedSites = new Map(); // siteId → SiteData (só no site principal)
 
 // ─── Cargos padrão ───────────────────────────────────────────────────────────
 const defaultRoles = [
@@ -112,6 +120,9 @@ users.set('admin', {
   username: 'admin',
   password: adminHash,
   role: 'admin',
+  roleId: null,    // OWNER é atribuído dinamicamente — não fica no mapa de roles
+  roleName: null,
+  isOwner: true,   // flag exclusiva do admin no site principal
   email: 'admin@seunomeaqui.com',
   createdAt: new Date().toISOString()
 });
@@ -171,6 +182,13 @@ function requireAdmin(req, res, next) {
   res.status(401).json({ error: 'Acesso não autorizado' });
 }
 
+function requireOwner(req, res, next) {
+  if (req.session && req.session.user && req.session.user.isOwner === true && !IS_CHILD_SITE) {
+    return next();
+  }
+  res.status(403).json({ error: 'Acesso exclusivo do OWNER' });
+}
+
 // ─── Rotas de páginas ────────────────────────────────────────────────────────
 app.get('/',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/login',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
@@ -181,7 +199,7 @@ app.get('/view/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 
 // ─── API: Configurações públicas ─────────────────────────────────────────────
 app.get('/api/config', (req, res) => {
   const { orgName, orgLogo, primaryColor, accentColor, bgColor, tagline, description } = siteConfig;
-  res.json({ orgName, orgLogo, primaryColor, accentColor, bgColor, tagline, description });
+  res.json({ orgName, orgLogo, primaryColor, accentColor, bgColor, tagline, description, isChildSite: IS_CHILD_SITE });
 });
 
 // ─── API: Autenticação ───────────────────────────────────────────────────────
@@ -191,8 +209,10 @@ app.post('/api/auth/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(401).json({ error: 'Usuário ou senha inválidos' });
   }
-  req.session.user = { id: user.id, username: user.username, role: user.role };
-  res.json({ success: true, user: { username: user.username, role: user.role } });
+  // isOwner só é true se for admin E não for site filho
+  const isOwner = user.isOwner === true && !IS_CHILD_SITE;
+  req.session.user = { id: user.id, username: user.username, role: user.role, isOwner };
+  res.json({ success: true, user: { username: user.username, role: user.role, isOwner } });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -253,7 +273,8 @@ app.delete('/api/admin/rooms/:id', requireAdmin, (req, res) => {
 app.get('/api/admin/users', requireAdmin, (req, res) => {
   const list = Array.from(users.values()).map(u => ({
     id: u.id, username: u.username, role: u.role,
-    roleId: u.roleId || null, roleName: u.roleName || null,
+    roleId: u.roleId || null,
+    roleName: u.isOwner ? null : (u.roleName || null),
     email: u.email, createdAt: u.createdAt
   }));
   res.json(list);
@@ -270,19 +291,11 @@ app.post('/api/admin/users', requireAdmin, (req, res) => {
     role: role || 'user',
     roleId: roleId || null,
     roleName: assignedRole ? assignedRole.name : null,
+    isOwner: false,
     email: email || '',
     createdAt: new Date().toISOString()
   });
   res.json({ success: true });
-});
-
-app.get('/api/admin/users', requireAdmin, (req, res) => {
-  const list = Array.from(users.values()).map(u => ({
-    id: u.id, username: u.username, role: u.role,
-    roleId: u.roleId || null, roleName: u.roleName || null,
-    email: u.email, createdAt: u.createdAt
-  }));
-  res.json(list);
 });
 
 app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
@@ -378,6 +391,44 @@ app.delete('/api/admin/roles/:id', requireAdmin, (req, res) => {
   if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
   // Permite deletar qualquer cargo, inclusive padrão (já confirmado no cliente)
   roles.delete(req.params.id);
+  res.json({ success: true });
+});
+
+// ─── API: Gerenciamento de Sites (apenas OWNER no site principal) ─────────────
+app.get('/api/owner/sites', requireOwner, (req, res) => {
+  res.json(Array.from(managedSites.values()));
+});
+
+app.post('/api/owner/sites', requireOwner, (req, res) => {
+  if (IS_CHILD_SITE) return res.status(403).json({ error: 'Não permitido em site filho' });
+
+  const { name, description } = req.body;
+  if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
+
+  const siteId   = uuidv4().replace(/-/g, '').substring(0, 12).toUpperCase();
+  const adminPwd = uuidv4().substring(0, 16); // senha aleatória para o admin do novo site
+
+  const site = {
+    id:          siteId,
+    name:        name.trim(),
+    description: description || '',
+    adminPassword: adminPwd,
+    renderEnvVars: {
+      IS_CHILD_SITE:  'true',
+      SITE_ID:        siteId,
+      SESSION_SECRET: uuidv4()
+    },
+    createdAt: new Date().toISOString(),
+    status:    'pendente'
+  };
+
+  managedSites.set(siteId, site);
+  res.json({ success: true, site });
+});
+
+app.delete('/api/owner/sites/:id', requireOwner, (req, res) => {
+  if (!managedSites.has(req.params.id)) return res.status(404).json({ error: 'Site não encontrado' });
+  managedSites.delete(req.params.id);
   res.json({ success: true });
 });
 

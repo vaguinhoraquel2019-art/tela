@@ -260,6 +260,46 @@
     .sysinfo-value { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
     .sysinfo-value.online { color: var(--success); }
 
+    /* ── Sites OWNER ── */
+    .site-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      transition: border-color var(--transition);
+    }
+    .site-card:hover { border-color: rgba(245,158,11,.35); }
+    .site-card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
+    .site-name { font-size:1rem;font-weight:700;color:var(--text-primary); }
+    .site-id-pill {
+      background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.2);
+      color: #f59e0b;
+      border-radius: var(--radius-full);
+      padding: 3px 10px;
+      font-size: .72rem;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+      letter-spacing: .04em;
+    }
+    .env-block {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: .78rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-top: 12px;
+      user-select: all;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .env-key   { color: #f59e0b; }
+    .env-value { color: #86efac; }
+
     /* ── Cargos ── */
     .role-card {
       background: var(--bg-card);
@@ -436,6 +476,13 @@
       </button>
       <button class="nav-item" data-page="settings">
         <span class="nav-icon">⚙️</span> Configurações
+      </button>
+    </div>
+
+    <div class="nav-section" id="nav-section-owner" style="display:none;">
+      <div class="nav-section-label" style="color:#f59e0b;">👑 OWNER</div>
+      <button class="nav-item" data-page="owner-sites" id="nav-owner-sites">
+        <span class="nav-icon">🌐</span> Gerenciar Sites
       </button>
     </div>
 
@@ -769,6 +816,66 @@
       </div>
     </section>
 
+    <!-- ════════ OWNER: GERENCIAR SITES ════════ -->
+    <section class="page-section" id="page-owner-sites">
+      <div class="page-header">
+        <div>
+          <div class="page-title" style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.4rem;">👑</span> Gerenciar Sites
+          </div>
+          <div class="page-subtitle">Crie e gerencie instâncias independentes do sistema</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-create-site">🌐 Criar Novo Site</button>
+      </div>
+
+      <!-- Banner OWNER -->
+      <div style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));border:1px solid rgba(245,158,11,.25);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;gap:16px;">
+        <span style="font-size:2rem;">👑</span>
+        <div>
+          <div style="font-weight:700;color:#f59e0b;margin-bottom:4px;">Área exclusiva OWNER</div>
+          <div style="font-size:.88rem;color:var(--text-secondary);">
+            Cada site criado aqui é uma instância independente com seu próprio link, usuários e configurações.
+            Sites filhos não possuem acesso a esta área e não podem criar outros sites.
+          </div>
+        </div>
+      </div>
+
+      <!-- Como funciona -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header"><span class="card-title">📋 Como funciona</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">1️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;color:var(--text-primary);">Crie o site</div>
+            <div style="font-size:.82rem;color:var(--text-muted);">Defina o nome e crie uma nova instância</div>
+          </div>
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">2️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;color:var(--text-primary);">Configure no Render</div>
+            <div style="font-size:.82rem;color:var(--text-muted);">Use as variáveis geradas para criar o serviço</div>
+          </div>
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">3️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;color:var(--text-primary);">Acesse o link</div>
+            <div style="font-size:.82rem;color:var(--text-muted);">O novo site funciona de forma independente</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de sites -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🌐 Sites Criados</span>
+          <button class="btn btn-ghost btn-sm" id="btn-refresh-sites">🔄 Atualizar</button>
+        </div>
+        <div id="owner-sites-list">
+          <div style="text-align:center;color:var(--text-muted);padding:40px;">
+            Nenhum site criado ainda. Clique em "Criar Novo Site" para começar.
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ════════ LOGS ════════ -->
     <section class="page-section" id="page-logs">
       <div class="page-header">
@@ -790,6 +897,66 @@
 </div>
 
 <!-- ═══════════════════════ MODAIS ═══════════════════════════ -->
+
+<!-- Modal: Criar novo site (OWNER) -->
+<div class="modal-overlay" id="modal-create-site">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🌐 Criar Novo Site</h3>
+      <button class="modal-close" onclick="closeModal('modal-create-site')">✕</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:.88rem;margin-bottom:20px;">
+      Uma nova instância independente será criada. Você receberá as variáveis de ambiente necessárias para configurar no Render.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Nome do site / organização</label>
+      <input type="text" class="form-control" id="new-site-name" placeholder="Ex: Empresa ABC, Prefeitura XYZ..." maxlength="50" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição (opcional)</label>
+      <input type="text" class="form-control" id="new-site-description" placeholder="Descrição rápida do cliente ou uso" maxlength="100" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-create-site')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-create-site">🌐 Criar Site</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalhes do site criado -->
+<div class="modal-overlay" id="modal-site-details">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <h3 class="modal-title">✅ Site Criado com Sucesso!</h3>
+      <button class="modal-close" onclick="closeModal('modal-site-details')">✕</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:.88rem;margin-bottom:16px;">
+      Use as variáveis abaixo ao criar um novo serviço no <strong style="color:var(--text-primary);">Render.com</strong> a partir do mesmo repositório GitHub.
+    </p>
+
+    <div style="font-size:.82rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
+      Variáveis de Ambiente — cole no Render
+    </div>
+    <div class="env-block" id="site-env-block">—</div>
+
+    <div style="margin-top:16px;padding:14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--radius-md);">
+      <div style="font-size:.82rem;font-weight:600;color:var(--success);margin-bottom:6px;">Login padrão do novo site</div>
+      <div style="font-size:.82rem;color:var(--text-secondary);">
+        Usuário: <code style="color:var(--text-primary);">admin</code> &nbsp;|&nbsp;
+        Senha: <code id="site-admin-pwd" style="color:#86efac;">—</code>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;font-size:.8rem;color:var(--text-muted);">
+      💡 Guarde essas informações. A senha não será exibida novamente.
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-copy-env-vars">📋 Copiar Variáveis</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-site-details')">Entendido</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: Novo usuário -->
 <div class="modal-overlay" id="modal-add-user">
@@ -1075,6 +1242,8 @@ async function checkAuth() {
     document.getElementById('sidebar-username').textContent = currentUser.username;
     document.getElementById('sidebar-role').textContent = currentUser.role === 'admin' ? 'Administrador' : 'Usuário';
     document.getElementById('sidebar-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+    // Inicia sistema OWNER se aplicável
+    initOwner(currentUser);
   } catch(e) {
     window.location.href = '/login';
   }
@@ -1094,6 +1263,10 @@ async function loadConfig() {
     const cfg = await res.json();
     applyConfig(cfg);
     currentConfig = cfg;
+    // Sites filhos nunca mostram seção OWNER
+    if (cfg.isChildSite) {
+      document.getElementById('nav-section-owner').style.display = 'none';
+    }
   } catch(e) {}
 }
 
@@ -1526,12 +1699,13 @@ function navigateTo(page) {
   document.querySelectorAll(`.nav-item[data-page="${page}"]`).forEach(el => el.classList.add('active'));
 
   // Carrega dados ao navegar
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'sessions')  loadAllSessions();
-  if (page === 'users')     loadUsers();
-  if (page === 'roles')     loadRoles();
-  if (page === 'customize') loadAdminConfig();
-  if (page === 'settings')  loadAdminConfig();
+  if (page === 'dashboard')    loadDashboard();
+  if (page === 'sessions')     loadAllSessions();
+  if (page === 'users')        loadUsers();
+  if (page === 'roles')        loadRoles();
+  if (page === 'owner-sites')  loadOwnerSites();
+  if (page === 'customize')    loadAdminConfig();
+  if (page === 'settings')     loadAdminConfig();
 
   // Fecha sidebar mobile
   document.getElementById('admin-sidebar').classList.remove('open');
@@ -1845,6 +2019,159 @@ async function deleteRole(id, isDefault) {
     } else {
       const d = await res.json();
       showToast(d.error || 'Erro ao remover.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', 'error');
+  }
+}
+
+// ── Sistema OWNER ─────────────────────────────────────────────────────────────
+let isOwner = false;
+
+function initOwner(user) {
+  isOwner = user.isOwner === true;
+  if (isOwner) {
+    // Mostra seção OWNER na sidebar
+    document.getElementById('nav-section-owner').style.display = 'block';
+    // Badge OWNER no perfil da sidebar
+    const roleEl = document.getElementById('sidebar-role');
+    if (roleEl) {
+      roleEl.innerHTML = '<span style="color:#f59e0b;font-weight:700;">👑 OWNER</span>';
+    }
+  }
+}
+
+async function loadOwnerSites() {
+  const container = document.getElementById('owner-sites-list');
+  try {
+    const res   = await fetch('/api/owner/sites');
+    if (!res.ok) return;
+    const sites = await res.json();
+
+    if (!sites.length) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Nenhum site criado ainda. Clique em "Criar Novo Site" para começar.</div>';
+      return;
+    }
+
+    container.innerHTML = sites.map(site => {
+      const envLines = Object.entries(site.renderEnvVars)
+        .map(([k, v]) => `<span class="env-key">${k}</span>=<span class="env-value">${v}</span>`)
+        .join('\n');
+
+      return `
+        <div class="site-card">
+          <div class="site-card-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:1.4rem;">🌐</span>
+              <div>
+                <div class="site-name">${site.name}</div>
+                <div style="font-size:.78rem;color:var(--text-muted);">${site.description || 'Sem descrição'}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="site-id-pill">ID: ${site.id}</span>
+              <button class="btn btn-ghost btn-sm" onclick="showSiteDetails('${site.id}')">📋 Instruções</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSite('${site.id}')">🗑️</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:.82rem;">
+            <div>
+              <span style="color:var(--text-muted);">Criado em</span><br>
+              <strong>${formatDateTime(site.createdAt)}</strong>
+            </div>
+            <div>
+              <span style="color:var(--text-muted);">Status</span><br>
+              <span style="color:var(--warning);">⚙️ Configuração pendente</span>
+            </div>
+            <div>
+              <span style="color:var(--text-muted);">Login admin</span><br>
+              <code style="color:var(--success);font-size:.78rem;">${site.adminPassword}</code>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;color:var(--danger);padding:20px;">Erro ao carregar sites.</div>';
+  }
+}
+
+function showSiteDetails(siteId) {
+  const res = fetch('/api/owner/sites').then(r => r.json()).then(sites => {
+    const site = sites.find(s => s.id === siteId);
+    if (!site) return;
+
+    const envText = Object.entries(site.renderEnvVars)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n');
+
+    const envHtml = Object.entries(site.renderEnvVars)
+      .map(([k, v]) => `<span class="env-key">${k}</span>=<span class="env-value">${v}</span>`)
+      .join('\n');
+
+    document.getElementById('site-env-block').innerHTML = envHtml;
+    document.getElementById('site-env-block').dataset.plain = envText;
+    document.getElementById('site-admin-pwd').textContent = site.adminPassword;
+    openModal('modal-site-details');
+  });
+}
+
+document.getElementById('btn-copy-env-vars').addEventListener('click', () => {
+  const text = document.getElementById('site-env-block').dataset.plain || '';
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Variáveis copiadas!', 'success', 3000);
+  });
+});
+
+document.getElementById('btn-create-site').addEventListener('click', () => {
+  document.getElementById('new-site-name').value = '';
+  document.getElementById('new-site-description').value = '';
+  openModal('modal-create-site');
+});
+
+document.getElementById('btn-refresh-sites').addEventListener('click', loadOwnerSites);
+
+document.getElementById('btn-confirm-create-site').addEventListener('click', async () => {
+  const name        = document.getElementById('new-site-name').value.trim();
+  const description = document.getElementById('new-site-description').value.trim();
+  if (!name) { showToast('Informe o nome do site.', 'warning'); return; }
+
+  const btn = document.getElementById('btn-confirm-create-site');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div>&ensp;Criando...';
+
+  try {
+    const res  = await fetch('/api/owner/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      closeModal('modal-create-site');
+      addLog(`Site "${name}" criado (ID: ${data.site.id})`, 'success');
+      loadOwnerSites();
+      // Abre modal de detalhes automaticamente
+      setTimeout(() => showSiteDetails(data.site.id), 300);
+      showToast(`Site "${name}" criado com sucesso!`, 'success');
+    } else {
+      showToast(data.error || 'Erro ao criar site.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🌐 Criar Site';
+  }
+});
+
+async function deleteSite(siteId) {
+  if (!confirm('Remover este site da lista? (O serviço no Render não será afetado)')) return;
+  try {
+    const res = await fetch(`/api/owner/sites/${siteId}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Site removido da lista.', 'success');
+      addLog(`Site ${siteId} removido`, 'warning');
+      loadOwnerSites();
     }
   } catch(e) {
     showToast('Erro de conexão.', 'error');
