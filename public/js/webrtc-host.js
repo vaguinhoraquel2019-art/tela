@@ -411,8 +411,20 @@ function showEnded(reason) {
 // ── Botões ────────────────────────────────────────────────────────
 document.getElementById('btn-start-share').addEventListener('click', startScreenShare);
 
+// Botões de câmera (mobile)
+const camBtn      = document.getElementById('btn-start-camera');
+const camFrontBtn = document.getElementById('btn-start-camera-front');
+if (camBtn)      camBtn.addEventListener('click', () => startCameraShare('environment'));
+if (camFrontBtn) camFrontBtn.addEventListener('click', () => startCameraShare('user'));
+
 document.getElementById('ctrl-screen').addEventListener('click', () => {
-  isSharing ? stopScreenShare() : startScreenShare();
+  if (isSharing) {
+    stopScreenShare();
+  } else if (isMobile || !supportsDisplayMedia) {
+    startCameraShare('environment');
+  } else {
+    startScreenShare();
+  }
 });
 
 document.getElementById('ctrl-stop').addEventListener('click', () => {
@@ -469,5 +481,66 @@ document.getElementById('ctrl-cam').addEventListener('click', function() {
   showToast('Câmera ' + (this.classList.contains('active') ? 'ativada' : 'desativada'), 'info', 2000);
 });
 
+// ── Detecção de dispositivo ───────────────────────────────────────────────────
+const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const supportsDisplayMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+
+function setupMobileUI() {
+  if (isMobile || !supportsDisplayMedia) {
+    document.getElementById('btn-start-share').style.display = 'none';
+    const camBtn      = document.getElementById('btn-start-camera');
+    const camFrontBtn = document.getElementById('btn-start-camera-front');
+    if (camBtn)      camBtn.style.display = 'flex';
+    if (camFrontBtn) camFrontBtn.style.display = 'flex';
+    const title = document.getElementById('placeholder-title');
+    const desc  = document.getElementById('placeholder-desc');
+    if (title) title.textContent = 'Câmera aparecerá aqui';
+    if (desc)  desc.textContent  = 'Escolha a câmera para iniciar a transmissão ao vivo.';
+    const ctrl = document.getElementById('ctrl-screen');
+    if (ctrl) { ctrl.title = 'Câmera'; ctrl.textContent = '📷'; }
+  }
+}
+
+// ── Iniciar câmera traseira ────────────────────────────────────────────────────
+async function startCameraShare(facingMode = 'environment') {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode,
+        width:  { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 }
+      },
+      audio: false
+    });
+
+    video.srcObject = localStream;
+    video.style.display = 'block';
+    placeholder.style.display = 'none';
+    liveBadge.classList.add('show');
+    videoTimer.classList.add('show');
+    videoArea.classList.add('sharing');
+    isSharing = true;
+    infoStatus.textContent = 'Transmitindo';
+
+    showToast(`Câmera ${facingMode === 'environment' ? 'traseira' : 'frontal'} ativada!`, 'success');
+
+    for (const viewerId of viewers) {
+      await sendOfferToViewer(viewerId);
+    }
+
+    localStream.getVideoTracks()[0].addEventListener('ended', () => {
+      stopScreenShare(false);
+    });
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      showToast('Permissão de câmera negada. Verifique as configurações do navegador.', 'error');
+    } else {
+      showToast('Erro ao acessar a câmera: ' + err.message, 'error');
+    }
+  }
+}
+
 // ── Inicia ────────────────────────────────────────────────────────
+setupMobileUI();
 init();

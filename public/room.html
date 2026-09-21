@@ -298,11 +298,19 @@
 
     <div class="video-placeholder" id="video-placeholder">
       <div class="video-placeholder-icon">🖥️</div>
-      <h3>Sua tela aparecerá aqui</h3>
-      <p>Clique em "Compartilhar Tela" para iniciar a transmissão ao vivo.</p>
-      <button class="btn btn-primary btn-lg" id="btn-start-share" style="margin-top:24px;">
-        ▶&ensp;Compartilhar Tela
-      </button>
+      <h3 id="placeholder-title">Sua tela aparecerá aqui</h3>
+      <p id="placeholder-desc">Clique em "Compartilhar Tela" para iniciar a transmissão ao vivo.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:24px;" id="share-buttons">
+        <button class="btn btn-primary btn-lg" id="btn-start-share">
+          ▶&ensp;<span id="btn-share-label">Compartilhar Tela</span>
+        </button>
+        <button class="btn btn-secondary btn-lg" id="btn-start-camera" style="display:none;">
+          📷&ensp;Câmera Traseira
+        </button>
+        <button class="btn btn-ghost btn-lg" id="btn-start-camera-front" style="display:none;">
+          🤳&ensp;Câmera Frontal
+        </button>
+      </div>
     </div>
 
     <div class="video-live-badge" id="live-badge">
