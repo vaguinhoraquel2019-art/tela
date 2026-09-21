@@ -235,10 +235,27 @@ async function sendOfferToViewer(viewerId) {
     const pc    = await createPeerForViewer(viewerId);
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    socket.emit('offer', { roomId, offer, targetId: viewerId });
+
+    // Aumenta o bitrate máximo via SDP (4 Mbps para vídeo)
+    const sdp = setBitrate(pc.localDescription.sdp, 4000);
+    await pc.setLocalDescription({ type: 'offer', sdp });
+
+    socket.emit('offer', { roomId, offer: { type: 'offer', sdp }, targetId: viewerId });
   } catch (e) {
     console.error('[Offer] Erro ao criar offer para', viewerId, e);
   }
+}
+
+// Injeta bitrate máximo no SDP
+function setBitrate(sdp, bitrateKbps) {
+  // Remove linhas b= antigas
+  sdp = sdp.replace(/b=AS:.*\r\n/g, '').replace(/b=TIAS:.*\r\n/g, '');
+  // Insere b=AS após cada linha m=video
+  sdp = sdp.replace(
+    /(m=video.*\r\n)/g,
+    `$1b=AS:${bitrateKbps}\r\nb=TIAS:${bitrateKbps * 1000}\r\n`
+  );
+  return sdp;
 }
 
 function closePeer(viewerId) {
@@ -253,7 +270,15 @@ function closePeer(viewerId) {
 async function startScreenShare() {
   try {
     localStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { cursor: 'always', frameRate: 30 },
+      video: {
+        cursor:           'always',
+        frameRate:        { ideal: 60, max: 60 },
+        width:            { ideal: 1920, max: 3840 },
+        height:           { ideal: 1080, max: 2160 },
+        displaySurface:   'monitor',
+        logicalSurface:   true,
+        resizeMode:       'none'
+      },
       audio: false
     });
 

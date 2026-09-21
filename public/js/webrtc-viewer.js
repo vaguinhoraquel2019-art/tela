@@ -133,7 +133,12 @@ function connectSocket() {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      socket.emit('answer', { roomId, answer, targetId: from });
+
+      // Aplica bitrate alto também no answer
+      const sdp = setBitrate(pc.localDescription.sdp, 4000);
+      await pc.setLocalDescription({ type: 'answer', sdp });
+
+      socket.emit('answer', { roomId, answer: { type: 'answer', sdp }, targetId: from });
     } catch (e) {
       console.error('[Offer] Erro ao processar:', e);
     }
@@ -224,6 +229,8 @@ async function createPeer(hId) {
     console.log('[WebRTC] Track recebida:', event.track.kind);
     if (event.streams && event.streams[0]) {
       remoteVideo.srcObject = event.streams[0];
+      // Força qualidade máxima de renderização
+      remoteVideo.style.imageRendering = 'high-quality';
       remoteVideo.onloadedmetadata = () => {
         remoteVideo.play()
           .then(() => {
@@ -256,6 +263,16 @@ async function createPeer(hId) {
   pc.onsignalingstatechange = () => {
     console.log('[Signaling] Estado:', pc.signalingState);
   };
+}
+
+// Injeta bitrate máximo no SDP
+function setBitrate(sdp, bitrateKbps) {
+  sdp = sdp.replace(/b=AS:.*\r\n/g, '').replace(/b=TIAS:.*\r\n/g, '');
+  sdp = sdp.replace(
+    /(m=video.*\r\n)/g,
+    `$1b=AS:${bitrateKbps}\r\nb=TIAS:${bitrateKbps * 1000}\r\n`
+  );
+  return sdp;
 }
 
 // ── Fullscreen ────────────────────────────────────────────────────
