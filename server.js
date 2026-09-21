@@ -437,21 +437,32 @@ app.get('/api/owner/sites', requireOwner, (req, res) => {
 app.post('/api/owner/sites', requireOwner, (req, res) => {
   if (IS_CHILD_SITE) return res.status(403).json({ error: 'Não permitido em site filho' });
 
-  const { name, description } = req.body;
+  const { name, description, tagline, logo, primaryColor, accentColor } = req.body;
   if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
 
   const siteId   = uuidv4().replace(/-/g, '').substring(0, 12).toUpperCase();
-  const adminPwd = uuidv4().substring(0, 16); // senha aleatória para o admin do novo site
+  const adminPwd = uuidv4().substring(0, 16);
 
   const site = {
     id:          siteId,
     name:        name.trim(),
     description: description || '',
+    tagline:     tagline || '',
+    logo:        logo || '',
+    primaryColor: primaryColor || '#2563eb',
+    accentColor:  accentColor || '#1d4ed8',
     adminPassword: adminPwd,
     renderEnvVars: {
-      IS_CHILD_SITE:  'true',
-      SITE_ID:        siteId,
-      SESSION_SECRET: uuidv4()
+      IS_CHILD_SITE:   'true',
+      SITE_ID:         siteId,
+      SESSION_SECRET:  uuidv4(),
+      ORG_NAME:        name.trim(),
+      ORG_TAGLINE:     tagline || '',
+      ORG_DESCRIPTION: description || '',
+      ORG_LOGO:        logo || '',
+      PRIMARY_COLOR:   primaryColor || '#2563eb',
+      ACCENT_COLOR:    accentColor || '#1d4ed8',
+      ADMIN_PASSWORD:  adminPwd
     },
     createdAt: new Date().toISOString(),
     status:    'pendente'

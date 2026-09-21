@@ -900,22 +900,70 @@
 
 <!-- Modal: Criar novo site (OWNER) -->
 <div class="modal-overlay" id="modal-create-site">
-  <div class="modal" style="max-width:520px;">
+  <div class="modal" style="max-width:600px; max-height:90vh; overflow-y:auto;">
     <div class="modal-header">
       <h3 class="modal-title">🌐 Criar Novo Site</h3>
       <button class="modal-close" onclick="closeModal('modal-create-site')">✕</button>
     </div>
     <p style="color:var(--text-secondary);font-size:.88rem;margin-bottom:20px;">
-      Uma nova instância independente será criada. Você receberá as variáveis de ambiente necessárias para configurar no Render.
+      Configure a identidade do novo site. Você receberá as variáveis de ambiente para configurar no Render.
     </p>
+
+    <!-- Identidade -->
+    <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px;">🏢 Identidade da Organização</div>
+
     <div class="form-group">
-      <label class="form-label">Nome do site / organização</label>
+      <label class="form-label">Nome da organização <span style="color:var(--danger);">*</span></label>
       <input type="text" class="form-control" id="new-site-name" placeholder="Ex: Empresa ABC, Prefeitura XYZ..." maxlength="50" />
     </div>
     <div class="form-group">
-      <label class="form-label">Descrição (opcional)</label>
-      <input type="text" class="form-control" id="new-site-description" placeholder="Descrição rápida do cliente ou uso" maxlength="100" />
+      <label class="form-label">Slogan / Tagline</label>
+      <input type="text" class="form-control" id="new-site-tagline" placeholder="Conectando pessoas onde você estiver." maxlength="100" />
     </div>
+    <div class="form-group">
+      <label class="form-label">Descrição do serviço</label>
+      <textarea class="form-control" id="new-site-description" rows="2" placeholder="Descrição que aparece na página inicial..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL da Logo</label>
+      <input type="url" class="form-control" id="new-site-logo" placeholder="https://exemplo.com/logo.png" />
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">Formatos: PNG, SVG, JPG</div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Cores -->
+    <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px;">🎨 Cores</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">Cor principal</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" id="new-site-primary-color" value="#2563eb" style="width:38px;height:38px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;cursor:pointer;padding:2px;" />
+          <input type="text" class="form-control" id="new-site-primary-hex" value="#2563eb" maxlength="7" placeholder="#2563eb" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cor de destaque</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" id="new-site-accent-color" value="#1d4ed8" style="width:38px;height:38px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;cursor:pointer;padding:2px;" />
+          <input type="text" class="form-control" id="new-site-accent-hex" value="#1d4ed8" maxlength="7" placeholder="#1d4ed8" />
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Pré-visualização -->
+    <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px;">👁️ Pré-visualização</div>
+    <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;display:flex;align-items:center;gap:12px;">
+      <div id="new-site-preview-logo" style="width:36px;height:36px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:700;color:#fff;text-align:center;line-height:1.2;overflow:hidden;flex-shrink:0;">SUA<br>LOGO<br>AQUI</div>
+      <div>
+        <div id="new-site-preview-name" style="font-weight:700;color:var(--text-primary);">SEU NOME AQUI</div>
+        <div id="new-site-preview-tagline" style="font-size:.78rem;color:var(--text-muted);">Slogan aqui</div>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-create-site')">Cancelar</button>
       <button class="btn btn-primary" id="btn-confirm-create-site">🌐 Criar Site</button>
@@ -2124,8 +2172,54 @@ document.getElementById('btn-copy-env-vars').addEventListener('click', () => {
 
 document.getElementById('btn-create-site').addEventListener('click', () => {
   document.getElementById('new-site-name').value = '';
+  document.getElementById('new-site-tagline').value = '';
   document.getElementById('new-site-description').value = '';
+  document.getElementById('new-site-logo').value = '';
+  document.getElementById('new-site-primary-color').value = '#2563eb';
+  document.getElementById('new-site-primary-hex').value = '#2563eb';
+  document.getElementById('new-site-accent-color').value = '#1d4ed8';
+  document.getElementById('new-site-accent-hex').value = '#1d4ed8';
+  document.getElementById('new-site-preview-name').textContent = 'SEU NOME AQUI';
+  document.getElementById('new-site-preview-tagline').textContent = 'Slogan aqui';
+  document.getElementById('new-site-preview-logo').innerHTML = 'SUA<br>LOGO<br>AQUI';
+  document.getElementById('new-site-preview-logo').style.background = '#2563eb';
   openModal('modal-create-site');
+});
+
+// Previews em tempo real
+document.getElementById('new-site-name').addEventListener('input', function() {
+  document.getElementById('new-site-preview-name').textContent = this.value || 'SEU NOME AQUI';
+});
+document.getElementById('new-site-tagline').addEventListener('input', function() {
+  document.getElementById('new-site-preview-tagline').textContent = this.value || 'Slogan aqui';
+});
+document.getElementById('new-site-logo').addEventListener('input', function() {
+  const el = document.getElementById('new-site-preview-logo');
+  if (this.value) {
+    el.innerHTML = `<img src="${this.value}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'" />`;
+    el.style.background = 'transparent';
+  } else {
+    el.innerHTML = 'SUA<br>LOGO<br>AQUI';
+    el.style.background = document.getElementById('new-site-primary-color').value;
+  }
+});
+document.getElementById('new-site-primary-color').addEventListener('input', function() {
+  document.getElementById('new-site-primary-hex').value = this.value;
+  document.getElementById('new-site-preview-logo').style.background = this.value;
+});
+document.getElementById('new-site-primary-hex').addEventListener('input', function() {
+  if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+    document.getElementById('new-site-primary-color').value = this.value;
+    document.getElementById('new-site-preview-logo').style.background = this.value;
+  }
+});
+document.getElementById('new-site-accent-color').addEventListener('input', function() {
+  document.getElementById('new-site-accent-hex').value = this.value;
+});
+document.getElementById('new-site-accent-hex').addEventListener('input', function() {
+  if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+    document.getElementById('new-site-accent-color').value = this.value;
+  }
 });
 
 document.getElementById('btn-refresh-sites').addEventListener('click', loadOwnerSites);
@@ -2133,6 +2227,11 @@ document.getElementById('btn-refresh-sites').addEventListener('click', loadOwner
 document.getElementById('btn-confirm-create-site').addEventListener('click', async () => {
   const name        = document.getElementById('new-site-name').value.trim();
   const description = document.getElementById('new-site-description').value.trim();
+  const tagline     = document.getElementById('new-site-tagline').value.trim();
+  const logo        = document.getElementById('new-site-logo').value.trim();
+  const primary     = document.getElementById('new-site-primary-hex').value || '#2563eb';
+  const accent      = document.getElementById('new-site-accent-hex').value || '#1d4ed8';
+
   if (!name) { showToast('Informe o nome do site.', 'warning'); return; }
 
   const btn = document.getElementById('btn-confirm-create-site');
@@ -2143,14 +2242,13 @@ document.getElementById('btn-confirm-create-site').addEventListener('click', asy
     const res  = await fetch('/api/owner/sites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description })
+      body: JSON.stringify({ name, description, tagline, logo, primaryColor: primary, accentColor: accent })
     });
     const data = await res.json();
     if (res.ok && data.success) {
       closeModal('modal-create-site');
       addLog(`Site "${name}" criado (ID: ${data.site.id})`, 'success');
       loadOwnerSites();
-      // Abre modal de detalhes automaticamente
       setTimeout(() => showSiteDetails(data.site.id), 300);
       showToast(`Site "${name}" criado com sucesso!`, 'success');
     } else {
