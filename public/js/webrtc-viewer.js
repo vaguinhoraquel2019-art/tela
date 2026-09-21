@@ -89,7 +89,8 @@ function showVideo() {
 // Botão manual de play quando autoplay é bloqueado
 function showPlayButton() {
   const existing = document.getElementById('manual-play-btn');
-  if (existing) return;
+  if (existing) existing.remove();
+
   const btn = document.createElement('button');
   btn.id = 'manual-play-btn';
   btn.innerHTML = '▶ Clique para ver a transmissão';
@@ -100,10 +101,21 @@ function showPlayButton() {
     z-index:10; box-shadow:0 4px 20px rgba(37,99,235,.5);
   `;
   btn.onclick = () => {
-    remoteVideo.play().then(() => {
-      btn.remove();
-      showToast('Transmissão conectada!', 'success', 3000);
-    });
+    // Garante que o srcObject ainda está presente
+    if (!remoteVideo.srcObject && pc) {
+      pc.getReceivers().forEach(r => {
+        if (r.track && r.track.kind === 'video') {
+          const s = new MediaStream([r.track]);
+          remoteVideo.srcObject = s;
+        }
+      });
+    }
+    remoteVideo.play()
+      .then(() => {
+        btn.remove();
+        showToast('Transmissão iniciada!', 'success', 3000);
+      })
+      .catch(e => console.error('[Play] Erro:', e));
   };
   document.getElementById('viewer-video-wrap').appendChild(btn);
 }
@@ -168,22 +180,24 @@ function connectSocket() {
     socket.emit('request-offer', { roomId });
 
     // Retry automático a cada 5 segundos enquanto estiver aguardando
-    // Para imediatamente se recebeu offer (pc não é null)
-    const retryInterval = setInterval(() => {
-      // Já tem vídeo ou já está negociando — para o retry
-      if (remoteVideo.style.display === 'block') {
-        clearInterval(retryInterval);
+    window._retryInterval = setInterval(() => {
+      if (remoteVideo.style.display === 'block' || remoteVideo.srcObject) {
+        clearInterval(window._retryInterval);
+        window._retryInterval = null;
         return;
       }
-      // Só pede novo offer se não tem peer ativo em negociação
       if (!pc || pc.signalingState === 'stable' || pc.connectionState === 'failed') {
         console.log('[Viewer] Retry: pedindo offer novamente...');
         socket.emit('request-offer', { roomId });
       }
-    }, 5000);
+    }, 6000);
 
-    // Para o retry após 3 minutos
-    setTimeout(() => clearInterval(retryInterval), 180000);
+    setTimeout(() => {
+      if (window._retryInterval) {
+        clearInterval(window._retryInterval);
+        window._retryInterval = null;
+      }
+    }, 180000);
   });
 
   socket.on('offer', async ({ offer, from }) => {
@@ -294,20 +308,29 @@ async function createPeer(hId) {
   pc.ontrack = (event) => {
     console.log('[WebRTC] Track recebida:', event.track.kind);
     if (event.streams && event.streams[0]) {
-      remoteVideo.srcObject = event.streams[0];
-      remoteVideo.onloadedmetadata = () => {
-        // Tenta autoplay, se bloqueado mostra botão para o usuário clicar
-        remoteVideo.play()
-          .then(() => {
-            showVideo();
-            showToast('Transmissão conectada!', 'success', 3000);
-          })
-          .catch(() => {
-            // Autoplay bloqueado — mostra vídeo e botão de play manual
-            showVideo();
-            showPlayButton();
-          });
-      };
+      const stream = event.streams[0];
+      remoteVideo.srcObject = stream;
+
+      // Para qualquer retry ativo
+      if (window._retryInterval) {
+        clearInterval(window._retryInterval);
+        window._retryInterval = null;
+      }
+
+      // Mostra o vídeo imediatamente
+      showVideo();
+
+      // Tenta autoplay
+      remoteVideo.play()
+        .then(() => {
+          const btn = document.getElementById('manual-play-btn');
+          if (btn) btn.remove();
+          showToast('Transmissão conectada!', 'success', 3000);
+        })
+        .catch(() => {
+          // Autoplay bloqueado — botão de play manual
+          showPlayButton();
+        });
     }
   };
 
