@@ -160,8 +160,16 @@ function connectSocket() {
     updateViewerCount(count);
     renderViewers();
     showToast(`Novo espectador conectado (${count} total)`, 'info', 3000);
-    // Só envia offer se já está compartilhando
+    // Envia offer imediatamente se já está compartilhando
     if (isSharing) sendOfferToViewer(viewerId);
+  });
+
+  // Viewer pediu o offer — envia se estiver transmitindo
+  socket.on('request-offer', ({ viewerId }) => {
+    console.log('[Offer] Viewer solicitou offer:', viewerId);
+    if (isSharing && viewers.has(viewerId)) {
+      sendOfferToViewer(viewerId);
+    }
   });
 
   socket.on('viewer-disconnected', ({ viewerId, count }) => {

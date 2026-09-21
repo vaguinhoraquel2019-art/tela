@@ -424,6 +424,15 @@ io.on('connection', (socket) => {
     console.log(`[Room] Viewer entrou: ${roomId} (total: ${room.viewers.size})`);
   });
 
+  // ── Viewer pede offer ao host ─────────────────────────────────────────────
+  socket.on('request-offer', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room || !room.hostSocketId) return;
+    // Encaminha o pedido ao host com o ID do viewer que pediu
+    io.to(room.hostSocketId).emit('request-offer', { viewerId: socket.id });
+    console.log(`[Room] Viewer ${socket.id} pediu offer ao host da sala ${roomId}`);
+  });
+
   // ── WebRTC: signaling ────────────────────────────────────────────────────
   socket.on('offer', ({ roomId, offer, targetId }) => {
     const target = targetId ? io.sockets.sockets.get(targetId) : null;

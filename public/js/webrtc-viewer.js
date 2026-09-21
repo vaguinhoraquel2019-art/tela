@@ -149,8 +149,22 @@ function connectSocket() {
 
   socket.on('viewer-joined', ({ status, room }) => {
     viewerCountLbl.textContent = `👥 ${room.viewerCount} visualizando`;
-    // Aguarda o host enviar um offer
     showState('waiting');
+    // Pede ao host que envie o offer caso já esteja transmitindo
+    socket.emit('request-offer', { roomId });
+
+    // Retry automático a cada 8 segundos enquanto estiver aguardando
+    const retryInterval = setInterval(() => {
+      if (remoteVideo.style.display === 'block') {
+        clearInterval(retryInterval); // já recebeu o vídeo
+        return;
+      }
+      console.log('[Viewer] Retry: pedindo offer novamente...');
+      socket.emit('request-offer', { roomId });
+    }, 8000);
+
+    // Para o retry após 2 minutos
+    setTimeout(() => clearInterval(retryInterval), 120000);
   });
 
   socket.on('offer', async ({ offer, from }) => {
