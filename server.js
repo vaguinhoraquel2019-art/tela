@@ -30,6 +30,80 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ─── Estado em memória ───────────────────────────────────────────────────────
 const rooms   = new Map(); // roomId → RoomData
 const users   = new Map(); // username → UserData
+const roles   = new Map(); // roleId  → RoleData
+
+// ─── Cargos padrão ───────────────────────────────────────────────────────────
+const defaultRoles = [
+  {
+    id: uuidv4(),
+    name: 'Administrador',
+    color: '#2563eb',
+    permissions: {
+      viewDashboard:    true,
+      manageSessions:   true,
+      manageUsers:      true,
+      manageRoles:      true,
+      manageConfig:     true,
+      createSession:    true,
+      viewSessions:     true,
+      endAnySessions:   true
+    },
+    createdAt: new Date().toISOString(),
+    isDefault: true
+  },
+  {
+    id: uuidv4(),
+    name: 'Moderador',
+    color: '#7c3aed',
+    permissions: {
+      viewDashboard:    true,
+      manageSessions:   true,
+      manageUsers:      false,
+      manageRoles:      false,
+      manageConfig:     false,
+      createSession:    true,
+      viewSessions:     true,
+      endAnySessions:   true
+    },
+    createdAt: new Date().toISOString(),
+    isDefault: true
+  },
+  {
+    id: uuidv4(),
+    name: 'Apresentador',
+    color: '#059669',
+    permissions: {
+      viewDashboard:    false,
+      manageSessions:   false,
+      manageUsers:      false,
+      manageRoles:      false,
+      manageConfig:     false,
+      createSession:    true,
+      viewSessions:     true,
+      endAnySessions:   false
+    },
+    createdAt: new Date().toISOString(),
+    isDefault: true
+  },
+  {
+    id: uuidv4(),
+    name: 'Espectador',
+    color: '#64748b',
+    permissions: {
+      viewDashboard:    false,
+      manageSessions:   false,
+      manageUsers:      false,
+      manageRoles:      false,
+      manageConfig:     false,
+      createSession:    false,
+      viewSessions:     true,
+      endAnySessions:   false
+    },
+    createdAt: new Date().toISOString(),
+    isDefault: true
+  }
+];
+defaultRoles.forEach(r => roles.set(r.id, r));
 
 // Usuário admin padrão (senha: admin123)
 const adminHash = bcrypt.hashSync('admin123', 10);
@@ -179,22 +253,36 @@ app.delete('/api/admin/rooms/:id', requireAdmin, (req, res) => {
 app.get('/api/admin/users', requireAdmin, (req, res) => {
   const list = Array.from(users.values()).map(u => ({
     id: u.id, username: u.username, role: u.role,
+    roleId: u.roleId || null, roleName: u.roleName || null,
     email: u.email, createdAt: u.createdAt
   }));
   res.json(list);
 });
 
 app.post('/api/admin/users', requireAdmin, (req, res) => {
-  const { username, password, role, email } = req.body;
+  const { username, password, role, email, roleId } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Dados obrigatórios ausentes' });
   if (users.has(username)) return res.status(409).json({ error: 'Usuário já existe' });
+  const assignedRole = roleId && roles.has(roleId) ? roles.get(roleId) : null;
   users.set(username, {
     id: uuidv4(), username,
     password: bcrypt.hashSync(password, 10),
-    role: role || 'user', email: email || '',
+    role: role || 'user',
+    roleId: roleId || null,
+    roleName: assignedRole ? assignedRole.name : null,
+    email: email || '',
     createdAt: new Date().toISOString()
   });
   res.json({ success: true });
+});
+
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  const list = Array.from(users.values()).map(u => ({
+    id: u.id, username: u.username, role: u.role,
+    roleId: u.roleId || null, roleName: u.roleName || null,
+    email: u.email, createdAt: u.createdAt
+  }));
+  res.json(list);
 });
 
 app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
@@ -225,6 +313,55 @@ app.get('/api/admin/stats', requireAdmin, (req, res) => {
     version:        '1.0.0',
     serverStatus:   'Online'
   });
+});
+
+// ─── API: Cargos ─────────────────────────────────────────────────────────────
+app.get('/api/admin/roles', requireAdmin, (req, res) => {
+  res.json(Array.from(roles.values()));
+});
+
+app.post('/api/admin/roles', requireAdmin, (req, res) => {
+  const { name, color, permissions } = req.body;
+  if (!name) return res.status(400).json({ error: 'Nome do cargo obrigatório' });
+
+  const id = uuidv4();
+  const role = {
+    id,
+    name: name.trim(),
+    color: color || '#2563eb',
+    permissions: {
+      viewDashboard:  permissions?.viewDashboard  || false,
+      manageSessions: permissions?.manageSessions || false,
+      manageUsers:    permissions?.manageUsers    || false,
+      manageRoles:    permissions?.manageRoles    || false,
+      manageConfig:   permissions?.manageConfig   || false,
+      createSession:  permissions?.createSession  || false,
+      viewSessions:   permissions?.viewSessions   || false,
+      endAnySessions: permissions?.endAnySessions || false
+    },
+    createdAt: new Date().toISOString(),
+    isDefault: false
+  };
+  roles.set(id, role);
+  res.json({ success: true, role });
+});
+
+app.put('/api/admin/roles/:id', requireAdmin, (req, res) => {
+  const role = roles.get(req.params.id);
+  if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
+  const { name, color, permissions } = req.body;
+  if (name)        role.name        = name.trim();
+  if (color)       role.color       = color;
+  if (permissions) role.permissions = { ...role.permissions, ...permissions };
+  res.json({ success: true, role });
+});
+
+app.delete('/api/admin/roles/:id', requireAdmin, (req, res) => {
+  const role = roles.get(req.params.id);
+  if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
+  if (role.isDefault) return res.status(403).json({ error: 'Cargos padrão não podem ser removidos' });
+  roles.delete(req.params.id);
+  res.json({ success: true });
 });
 
 // ─── Socket.IO ───────────────────────────────────────────────────────────────

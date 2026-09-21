@@ -260,6 +260,82 @@
     .sysinfo-value { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
     .sysinfo-value.online { color: var(--success); }
 
+    /* ── Cargos ── */
+    .role-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      transition: border-color var(--transition);
+    }
+    .role-card:hover { border-color: var(--border-light); }
+    .role-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .role-badge-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: .88rem;
+      font-weight: 700;
+    }
+    .role-perms-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .perm-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: .75rem;
+      color: var(--text-secondary);
+    }
+    .perm-tag.active {
+      background: rgba(37,99,235,.12);
+      border-color: rgba(37,99,235,.25);
+      color: var(--primary-light);
+    }
+    .perm-tag.inactive { opacity: .4; }
+
+    /* Permissões no modal */
+    .perm-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .perm-item:hover { border-color: var(--primary); }
+    .perm-item input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .perm-item.checked {
+      background: rgba(37,99,235,.08);
+      border-color: rgba(37,99,235,.3);
+    }
+    .perm-info { display: flex; align-items: flex-start; gap: 8px; }
+    .perm-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .perm-name { font-size: .85rem; font-weight: 600; color: var(--text-primary); }
+    .perm-desc { font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
+
     /* ── Mobile sidebar toggle ── */
     .sidebar-toggle {
       display: none;
@@ -351,6 +427,9 @@
       <div class="nav-section-label">Gerenciar</div>
       <button class="nav-item" data-page="users">
         <span class="nav-icon">👥</span> Usuários
+      </button>
+      <button class="nav-item" data-page="roles">
+        <span class="nav-icon">🎖️</span> Cargos
       </button>
       <button class="nav-item" data-page="customize">
         <span class="nav-icon">🎨</span> Personalização
@@ -511,6 +590,22 @@
       </div>
     </section>
 
+    <!-- ════════ CARGOS ════════ -->
+    <section class="page-section" id="page-roles">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Cargos</div>
+          <div class="page-subtitle">Gerencie os cargos e suas permissões de acesso</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="btn-add-role">+ Novo Cargo</button>
+      </div>
+
+      <!-- Lista de cargos -->
+      <div id="roles-list" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="text-align:center; color:var(--text-muted); padding:40px;">Carregando cargos...</div>
+      </div>
+    </section>
+
     <!-- ════════ USUÁRIOS ════════ -->
     <section class="page-section" id="page-users">
       <div class="page-header">
@@ -529,6 +624,7 @@
                 <th>Usuário</th>
                 <th>E-mail</th>
                 <th>Função</th>
+                <th>Cargo</th>
                 <th>Criado em</th>
                 <th>Ações</th>
               </tr>
@@ -715,15 +811,155 @@
       <input type="email" class="form-control" id="new-user-email" placeholder="usuario@exemplo.com" />
     </div>
     <div class="form-group">
-      <label class="form-label">Função</label>
+      <label class="form-label">Função no sistema</label>
       <select class="form-control" id="new-user-role">
         <option value="user">Usuário</option>
         <option value="admin">Administrador</option>
       </select>
     </div>
+    <div class="form-group">
+      <label class="form-label">Cargo <span style="color:var(--text-muted); font-weight:400;">(define as permissões)</span></label>
+      <select class="form-control" id="new-user-role-id">
+        <option value="">— Sem cargo específico —</option>
+      </select>
+      <div id="role-permissions-preview" style="display:none; margin-top:10px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px;">
+        <div style="font-size:.78rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Permissões do cargo</div>
+        <div id="role-perms-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-add-user')">Cancelar</button>
       <button class="btn btn-primary" id="btn-confirm-add-user">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo cargo -->
+<div class="modal-overlay" id="modal-add-role">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🎖️ Novo Cargo</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-role')">✕</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Nome do Cargo</label>
+        <input type="text" class="form-control" id="new-role-name" placeholder="Ex: Gerente, Suporte, Convidado..." maxlength="40" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cor do cargo</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="color" id="new-role-color" value="#2563eb" style="width:40px;height:40px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;cursor:pointer;padding:2px;" />
+          <input type="text" class="form-control" id="new-role-color-hex" value="#2563eb" maxlength="7" placeholder="#2563eb" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pré-visualização</label>
+        <div id="role-badge-preview" style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:9999px; font-size:.82rem; font-weight:600; background:rgba(37,99,235,.15); color:#2563eb; border:1px solid rgba(37,99,235,.3);">
+          🎖️ <span id="role-preview-name">Nome do Cargo</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:8px;">
+      <div style="font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:14px;">Permissões de Acesso</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" id="permissions-grid">
+
+        <label class="perm-item" data-perm="viewDashboard">
+          <input type="checkbox" id="perm-viewDashboard" />
+          <div class="perm-info">
+            <span class="perm-icon">📊</span>
+            <div>
+              <div class="perm-name">Ver Dashboard</div>
+              <div class="perm-desc">Acessa o painel principal</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="createSession">
+          <input type="checkbox" id="perm-createSession" />
+          <div class="perm-info">
+            <span class="perm-icon">▶️</span>
+            <div>
+              <div class="perm-name">Criar Sessões</div>
+              <div class="perm-desc">Inicia novos compartilhamentos</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="viewSessions">
+          <input type="checkbox" id="perm-viewSessions" />
+          <div class="perm-info">
+            <span class="perm-icon">🖥️</span>
+            <div>
+              <div class="perm-name">Ver Sessões</div>
+              <div class="perm-desc">Lista e acessa sessões ativas</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="manageSessions">
+          <input type="checkbox" id="perm-manageSessions" />
+          <div class="perm-info">
+            <span class="perm-icon">⚙️</span>
+            <div>
+              <div class="perm-name">Gerenciar Sessões</div>
+              <div class="perm-desc">Edita e administra sessões</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="endAnySessions">
+          <input type="checkbox" id="perm-endAnySessions" />
+          <div class="perm-info">
+            <span class="perm-icon">⬛</span>
+            <div>
+              <div class="perm-name">Encerrar Sessões</div>
+              <div class="perm-desc">Pode encerrar sessões de outros</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="manageUsers">
+          <input type="checkbox" id="perm-manageUsers" />
+          <div class="perm-info">
+            <span class="perm-icon">👥</span>
+            <div>
+              <div class="perm-name">Gerenciar Usuários</div>
+              <div class="perm-desc">Cria e remove usuários</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="manageRoles">
+          <input type="checkbox" id="perm-manageRoles" />
+          <div class="perm-info">
+            <span class="perm-icon">🎖️</span>
+            <div>
+              <div class="perm-name">Gerenciar Cargos</div>
+              <div class="perm-desc">Cria e edita cargos</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="perm-item" data-perm="manageConfig">
+          <input type="checkbox" id="perm-manageConfig" />
+          <div class="perm-info">
+            <span class="perm-icon">🎨</span>
+            <div>
+              <div class="perm-name">Personalização</div>
+              <div class="perm-desc">Altera visual e configurações</div>
+            </div>
+          </div>
+        </label>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-role')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-add-role">🎖️ Criar Cargo</button>
     </div>
   </div>
 </div>
@@ -1141,7 +1377,13 @@ async function loadUsers() {
       return;
     }
 
-    tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users.map(u => {
+      const roleColor = u.roleId ? (allRoles.find(r => r.id === u.roleId)?.color || '#64748b') : null;
+      const roleBadge = u.roleName
+        ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:9999px;font-size:.75rem;font-weight:600;background:${roleColor}22;color:${roleColor};border:1px solid ${roleColor}44;">🎖️ ${u.roleName}</span>`
+        : '<span class="td-muted">—</span>';
+
+      return `
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:10px;">
@@ -1151,6 +1393,7 @@ async function loadUsers() {
         </td>
         <td class="td-muted">${u.email || '—'}</td>
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-waiting'}">${u.role === 'admin' ? '⭐ Admin' : '👤 Usuário'}</span></td>
+        <td>${roleBadge}</td>
         <td class="td-muted">${formatDateTime(u.createdAt)}</td>
         <td>
           ${u.username !== 'admin' ?
@@ -1158,8 +1401,8 @@ async function loadUsers() {
             '<span class="td-muted">Protegido</span>'
           }
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } catch(e) {
     showToast('Erro ao carregar usuários.', 'error');
   }
@@ -1172,6 +1415,7 @@ document.getElementById('btn-confirm-add-user').addEventListener('click', async 
   const password = document.getElementById('new-user-password').value;
   const email    = document.getElementById('new-user-email').value.trim();
   const role     = document.getElementById('new-user-role').value;
+  const roleId   = document.getElementById('new-user-role-id').value || null;
 
   if (!username || !password) { showToast('Usuário e senha são obrigatórios.', 'warning'); return; }
   if (password.length < 6)    { showToast('Senha deve ter ao menos 6 caracteres.', 'warning'); return; }
@@ -1180,7 +1424,7 @@ document.getElementById('btn-confirm-add-user').addEventListener('click', async 
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, email, role })
+      body: JSON.stringify({ username, password, email, role, roleId })
     });
     const data = await res.json();
     if (res.ok) {
@@ -1190,6 +1434,8 @@ document.getElementById('btn-confirm-add-user').addEventListener('click', async 
       document.getElementById('new-user-username').value = '';
       document.getElementById('new-user-password').value = '';
       document.getElementById('new-user-email').value    = '';
+      document.getElementById('new-user-role-id').value  = '';
+      document.getElementById('role-permissions-preview').style.display = 'none';
       loadUsers();
     } else {
       showToast(data.error || 'Erro ao criar usuário.', 'error');
@@ -1251,6 +1497,7 @@ function navigateTo(page) {
   if (page === 'dashboard') loadDashboard();
   if (page === 'sessions')  loadAllSessions();
   if (page === 'users')     loadUsers();
+  if (page === 'roles')     loadRoles();
   if (page === 'customize') loadAdminConfig();
   if (page === 'settings')  loadAdminConfig();
 
@@ -1285,10 +1532,200 @@ setInterval(() => {
   if (activePage && activePage.id === 'page-dashboard') loadDashboard();
 }, 15000);
 
+// ── Cargos ───────────────────────────────────────────────────────
+const PERM_LABELS = {
+  viewDashboard:  { icon: '📊', label: 'Ver Dashboard' },
+  createSession:  { icon: '▶️', label: 'Criar Sessões' },
+  viewSessions:   { icon: '🖥️', label: 'Ver Sessões' },
+  manageSessions: { icon: '⚙️', label: 'Gerenciar Sessões' },
+  endAnySessions: { icon: '⬛', label: 'Encerrar Sessões' },
+  manageUsers:    { icon: '👥', label: 'Gerenciar Usuários' },
+  manageRoles:    { icon: '🎖️', label: 'Gerenciar Cargos' },
+  manageConfig:   { icon: '🎨', label: 'Personalização' }
+};
+
+let allRoles = [];
+
+async function loadRoles() {
+  try {
+    const res = await fetch('/api/admin/roles');
+    if (!res.ok) return;
+    allRoles = await res.json();
+    renderRolesList();
+    populateRoleSelect();
+  } catch(e) {
+    showToast('Erro ao carregar cargos.', 'error');
+  }
+}
+
+function renderRolesList() {
+  const container = document.getElementById('roles-list');
+  if (!allRoles.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Nenhum cargo cadastrado.</div>';
+    return;
+  }
+  container.innerHTML = allRoles.map(role => {
+    const hexColor   = role.color || '#2563eb';
+    const permsHtml  = Object.entries(PERM_LABELS).map(([key, { icon, label }]) => {
+      const active = role.permissions[key];
+      return `<span class="perm-tag ${active ? 'active' : 'inactive'}">${icon} ${label}</span>`;
+    }).join('');
+
+    const deleteBtn = role.isDefault
+      ? `<span style="font-size:.75rem;color:var(--text-muted);">Padrão</span>`
+      : `<button class="btn btn-danger btn-sm" onclick="deleteRole('${role.id}')">🗑️ Remover</button>`;
+
+    return `
+      <div class="role-card">
+        <div class="role-card-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="role-badge-name" style="background:${hexColor}22;color:${hexColor};border:1px solid ${hexColor}44;">
+              🎖️ ${role.name}
+            </span>
+            ${role.isDefault ? '<span class="badge badge-waiting" style="font-size:.7rem;">Padrão</span>' : ''}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            ${deleteBtn}
+          </div>
+        </div>
+        <div class="role-perms-wrap">${permsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function populateRoleSelect() {
+  const sel = document.getElementById('new-user-role-id');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Sem cargo específico —</option>';
+  allRoles.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value       = r.id;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  });
+}
+
+// Preview permissões ao selecionar cargo no modal de usuário
+document.getElementById('new-user-role-id').addEventListener('change', function() {
+  const preview = document.getElementById('role-permissions-preview');
+  const permsList = document.getElementById('role-perms-list');
+  const role = allRoles.find(r => r.id === this.value);
+  if (!role) { preview.style.display = 'none'; return; }
+
+  preview.style.display = 'block';
+  permsList.innerHTML = Object.entries(PERM_LABELS).map(([key, { icon, label }]) => {
+    const active = role.permissions[key];
+    return `<span class="perm-tag ${active ? 'active' : 'inactive'}">${icon} ${label}</span>`;
+  }).join('');
+});
+
+// Criar cargo
+document.getElementById('btn-add-role').addEventListener('click', () => {
+  // Limpa o modal
+  document.getElementById('new-role-name').value     = '';
+  document.getElementById('new-role-color').value    = '#2563eb';
+  document.getElementById('new-role-color-hex').value = '#2563eb';
+  document.getElementById('role-preview-name').textContent = 'Nome do Cargo';
+  document.querySelectorAll('#permissions-grid input[type="checkbox"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.perm-item').forEach(el => el.classList.remove('checked'));
+  openModal('modal-add-role');
+});
+
+// Atualiza preview do cargo em tempo real
+document.getElementById('new-role-name').addEventListener('input', function() {
+  document.getElementById('role-preview-name').textContent = this.value || 'Nome do Cargo';
+});
+
+document.getElementById('new-role-color').addEventListener('input', function() {
+  document.getElementById('new-role-color-hex').value = this.value;
+  updateRoleBadgePreview(this.value);
+});
+document.getElementById('new-role-color-hex').addEventListener('input', function() {
+  if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+    document.getElementById('new-role-color').value = this.value;
+    updateRoleBadgePreview(this.value);
+  }
+});
+
+function updateRoleBadgePreview(hex) {
+  const badge = document.getElementById('role-badge-preview');
+  badge.style.background = hex + '22';
+  badge.style.color      = hex;
+  badge.style.borderColor = hex + '44';
+}
+
+// Checkboxes de permissão com visual
+document.querySelectorAll('.perm-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const cb = this.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    this.classList.toggle('checked', cb.checked);
+  });
+  // Impede duplo toggle quando clica direto no checkbox
+  item.querySelector('input').addEventListener('click', function(e) {
+    e.stopPropagation();
+    item.classList.toggle('checked', this.checked);
+  });
+});
+
+document.getElementById('btn-confirm-add-role').addEventListener('click', async () => {
+  const name  = document.getElementById('new-role-name').value.trim();
+  const color = document.getElementById('new-role-color-hex').value || '#2563eb';
+  if (!name) { showToast('Informe o nome do cargo.', 'warning'); return; }
+
+  const permissions = {};
+  Object.keys(PERM_LABELS).forEach(key => {
+    permissions[key] = document.getElementById(`perm-${key}`)?.checked || false;
+  });
+
+  const btn = document.getElementById('btn-confirm-add-role');
+  btn.disabled = true;
+  try {
+    const res  = await fetch('/api/admin/roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color, permissions })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`Cargo "${name}" criado!`, 'success');
+      addLog(`Cargo "${name}" criado`, 'success');
+      closeModal('modal-add-role');
+      loadRoles();
+    } else {
+      showToast(data.error || 'Erro ao criar cargo.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function deleteRole(id) {
+  const role = allRoles.find(r => r.id === id);
+  if (!role) return;
+  if (!confirm(`Remover o cargo "${role.name}"?`)) return;
+  try {
+    const res = await fetch(`/api/admin/roles/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast(`Cargo "${role.name}" removido.`, 'success');
+      addLog(`Cargo "${role.name}" removido`, 'warning');
+      loadRoles();
+    } else {
+      const d = await res.json();
+      showToast(d.error || 'Erro ao remover.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', 'error');
+  }
+}
+
 // ── Inicialização ─────────────────────────────────────────────────
 (async function init() {
   await checkAuth();
   await loadConfig();
+  await loadRoles();
   await loadDashboard();
   addLog('Painel administrativo carregado', 'success');
 })();
