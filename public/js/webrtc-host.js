@@ -147,15 +147,21 @@ function connectSocket() {
     renderViewers();
     showToast(`Novo espectador conectado (${count} total)`, 'info', 3000);
     // Envia offer imediatamente se já está compartilhando
-    if (isSharing) sendOfferToViewer(viewerId);
+    if (isSharing) {
+      setTimeout(() => sendOfferToViewer(viewerId), 500);
+    }
   });
 
-  // Viewer pediu o offer — envia se estiver transmitindo
+  // Viewer pediu o offer — envia sempre que estiver transmitindo
   socket.on('request-offer', ({ viewerId }) => {
     console.log('[Offer] Viewer solicitou offer:', viewerId);
-    if (isSharing && viewers.has(viewerId)) {
-      sendOfferToViewer(viewerId);
+    // Adiciona o viewer ao Set caso ainda não esteja (pode ter entrado antes)
+    viewers.add(viewerId);
+    if (isSharing) {
+      setTimeout(() => sendOfferToViewer(viewerId), 300);
     }
+    // Se não está compartilhando ainda, viewer ficará aguardando
+    // O offer será enviado quando startScreenShare() for chamado
   });
 
   socket.on('viewer-disconnected', ({ viewerId, count }) => {
@@ -312,12 +318,13 @@ async function startScreenShare() {
     isSharing = true;
     infoStatus.textContent = 'Transmitindo';
 
-    // Envia stream para todos os viewers já conectados
+    showToast('Transmissão iniciada!', 'success');
+
+    // Envia stream para TODOS os viewers conectados
+    console.log(`[Share] Enviando offer para ${viewers.size} viewer(s)`);
     for (const viewerId of viewers) {
       await sendOfferToViewer(viewerId);
     }
-
-    showToast('Transmissão iniciada!', 'success');
 
     // Quando o usuário para pelo botão do navegador
     localStream.getVideoTracks()[0].addEventListener('ended', () => {

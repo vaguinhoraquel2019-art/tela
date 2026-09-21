@@ -139,18 +139,18 @@ function connectSocket() {
     // Pede ao host que envie o offer caso já esteja transmitindo
     socket.emit('request-offer', { roomId });
 
-    // Retry automático a cada 8 segundos enquanto estiver aguardando
+    // Retry automático a cada 5 segundos enquanto estiver aguardando
     const retryInterval = setInterval(() => {
       if (remoteVideo.style.display === 'block') {
-        clearInterval(retryInterval); // já recebeu o vídeo
+        clearInterval(retryInterval);
         return;
       }
       console.log('[Viewer] Retry: pedindo offer novamente...');
       socket.emit('request-offer', { roomId });
-    }, 8000);
+    }, 5000);
 
-    // Para o retry após 2 minutos
-    setTimeout(() => clearInterval(retryInterval), 120000);
+    // Para o retry após 3 minutos
+    setTimeout(() => clearInterval(retryInterval), 180000);
   });
 
   socket.on('offer', async ({ offer, from }) => {
