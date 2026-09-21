@@ -17,82 +17,110 @@ if %errorlevel% neq 0 (
     echo Instale o Git em: https://git-scm.com/download/win
     echo Apos instalar, reinicie o computador e execute novamente.
     echo.
-    pause
+    echo Pressione qualquer tecla para sair...
+    pause >nul
     exit /b 1
 )
+
 for /f "tokens=*" %%v in ('git --version') do echo Git encontrado: %%v
 echo.
 
 :: ── Pede a URL do repositorio ────────────────────────────────────
-echo Antes de continuar, crie um repositorio VAZIO no GitHub:
-echo   1. Acesse https://github.com/new
-echo   2. Escolha um nome para o repositorio
-echo   3. Deixe em branco (sem README, sem .gitignore)
-echo   4. Clique em "Create repository"
-echo   5. Copie a URL que aparece (exemplo abaixo)
-echo.
 echo Exemplo de URL:
 echo   https://github.com/seu-usuario/seu-repositorio.git
 echo.
-set /p REPO_URL=Cole aqui a URL do seu repositorio: 
+set /p REPO_URL=Cole aqui a URL do seu repositorio GitHub: 
+echo.
 
 if "%REPO_URL%"=="" (
+    color 0C
+    echo ERRO: URL nao informada.
     echo.
-    echo ERRO: URL nao informada. Operacao cancelada.
     pause
     exit /b 1
 )
 
-echo.
-echo URL informada: %REPO_URL%
+echo URL recebida: %REPO_URL%
 echo.
 
 :: ── Inicializa git se necessario ─────────────────────────────────
 if not exist ".git\" (
-    echo Inicializando repositorio Git local...
+    echo Inicializando git local...
     git init
+    if %errorlevel% neq 0 (
+        color 0C
+        echo ERRO ao inicializar git.
+        pause
+        exit /b 1
+    )
     echo.
 )
 
-:: ── Configura branch principal ───────────────────────────────────
+:: ── Configura branch main ────────────────────────────────────────
 git branch -M main 2>nul
 
-:: ── Adiciona todos os arquivos ───────────────────────────────────
-echo Adicionando arquivos ao commit...
+:: ── Adiciona arquivos ────────────────────────────────────────────
+echo Adicionando arquivos...
 git add .
+if %errorlevel% neq 0 (
+    color 0C
+    echo ERRO ao adicionar arquivos.
+    pause
+    exit /b 1
+)
+echo Arquivos adicionados.
 echo.
 
-:: ── Cria o commit ────────────────────────────────────────────────
+:: ── Cria commit ──────────────────────────────────────────────────
 echo Criando commit...
 git commit -m "Projeto inicial - Plataforma de Compartilhamento de Tela"
+if %errorlevel% neq 0 (
+    color 0E
+    echo AVISO: Commit falhou. Pode ser que nao ha email configurado no git.
+    echo Configurando email e nome padrao...
+    git config user.email "usuario@exemplo.com"
+    git config user.name "Usuario"
+    git commit -m "Projeto inicial - Plataforma de Compartilhamento de Tela"
+)
 echo.
 
-:: ── Vincula ao repositorio remoto ───────────────────────────────
-echo Conectando ao GitHub...
+:: ── Vincula repositorio remoto ───────────────────────────────────
+echo Conectando ao repositorio remoto...
 git remote remove origin 2>nul
 git remote add origin %REPO_URL%
 echo.
 
 :: ── Envia para o GitHub ──────────────────────────────────────────
-echo Enviando para o GitHub...
-echo (Pode ser solicitado seu usuario e senha/token do GitHub)
+echo Enviando arquivos para o GitHub...
+echo (Se pedir senha, use seu TOKEN do GitHub, nao a senha normal)
 echo.
 git push -u origin main
 
 if %errorlevel% neq 0 (
-    color 0E
     echo.
-    echo AVISO: Nao foi possivel enviar automaticamente.
+    echo Tentando com branch master...
+    git push -u origin master
+)
+
+if %errorlevel% neq 0 (
+    color 0C
     echo.
-    echo Isso pode acontecer por dois motivos:
+    echo ======================================================
+    echo   ERRO AO ENVIAR PARA O GITHUB
+    echo ======================================================
     echo.
-    echo 1. Autenticacao necessaria:
-    echo    - Acesse https://github.com/settings/tokens
-    echo    - Gere um token com permissao "repo"
-    echo    - Use o token como senha ao autenticar
+    echo Possiveis causas:
     echo.
-    echo 2. Branch diferente (tente o comando abaixo no terminal):
-    echo    git push -u origin master
+    echo 1. Token incorreto ou expirado
+    echo    - Gere um novo em: https://github.com/settings/tokens
+    echo    - Marque a permissao "repo"
+    echo    - Use o token como SENHA quando solicitado
+    echo.
+    echo 2. Repositorio nao existe ou URL errada
+    echo    - Confira a URL no GitHub
+    echo.
+    echo 3. Repositorio nao esta vazio
+    echo    - Delete o repositorio e crie um novo vazio
     echo.
     pause
     exit /b 1
@@ -105,8 +133,7 @@ echo ======================================================
 echo   PROJETO ENVIADO PARA O GITHUB COM SUCESSO!
 echo ======================================================
 echo.
-echo Acesse seu repositorio em:
-echo %REPO_URL%
+echo Acesse: %REPO_URL%
 echo.
 set /p ABRIR=Deseja abrir o repositorio no navegador? (S/N): 
 if /i "%ABRIR%"=="S" (
@@ -114,4 +141,5 @@ if /i "%ABRIR%"=="S" (
 )
 
 echo.
-pause
+echo Pressione qualquer tecla para fechar...
+pause >nul
