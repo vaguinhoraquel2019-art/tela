@@ -36,10 +36,11 @@ let isSharing     = false;
 let sessionStart  = null;
 let timerInterval = null;
 let elapsed       = 0;
+let sessionEndedByMe = false; // controla se o host mesmo encerrou
 const peers       = new Map(); // viewerId → RTCPeerConnection
 const viewers     = new Set();
 
-// ICE servers (STUN públicos)
+// ICE servers
 const iceConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -72,7 +73,6 @@ const loadingScreen = document.getElementById('loading-screen');
 
 // ── Inicialização ─────────────────────────────────────────────────
 async function init() {
-  // Carrega config de personalização
   try {
     const res = await fetch('/api/config');
     const cfg = await res.json();
@@ -90,21 +90,18 @@ async function init() {
         el.style.cssText = 'background:transparent;border:none;padding:0;';
       });
     }
-  } catch (e) { /* sem config */ }
+  } catch (e) {}
 
-  // Verifica se a sala existe
   try {
     const res  = await fetch(`/api/rooms/${roomId}`);
     const room = await res.json();
     if (room.error) { showEnded('Sala não encontrada.'); return; }
 
-    idPill.textContent = `ID: ${roomId}`;
-    infoRoomId.textContent = roomId;
+    idPill.textContent      = `ID: ${roomId}`;
+    infoRoomId.textContent  = roomId;
     infoCreated.textContent = formatDateTime(room.createdAt);
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/view/${roomId}`;
+    const link = `${window.location.origin}/view/${roomId}`;
     sessionLinkEl.textContent = link;
-    document.getElementById('mockup-url-text') && (document.getElementById('mockup-url-text').textContent = link);
   } catch (e) {
     showEnded('Erro ao carregar a sessão.');
     return;
@@ -123,7 +120,7 @@ function connectSocket() {
     socket.emit('host-join', { roomId });
   });
 
-  socket.on('host-joined', ({ room }) => {
+  socket.on('host-joined', () => {
     sessionStart = Date.now();
     startTimer();
     showToast('Sala criada! Compartilhe o link com os espectadores.', 'success');
@@ -136,6 +133,7 @@ function connectSocket() {
     updateViewerCount(count);
     renderViewers();
     showToast(`Novo espectador conectado (${count} total)`, 'info', 3000);
+    // Só envia offer se já está compartilhando
     if (isSharing) sendOfferToViewer(viewerId);
   });
 
@@ -148,25 +146,30 @@ function connectSocket() {
 
   socket.on('answer', ({ answer, from }) => {
     const pc = peers.get(from);
-    if (pc) pc.setRemoteDescription(new RTCSessionDescription(answer));
+    if (pc && pc.signalingState !== 'stable') {
+      pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(e => {
+        console.warn('[Answer] Erro:', e);
+      });
+    }
   });
 
   socket.on('ice-candidate', ({ candidate, from }) => {
     const pc = peers.get(from);
-    if (pc && candidate) pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+    if (pc && candidate) {
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+    }
   });
 
   socket.on('room-updated', (room) => {
     updateViewerCount(room.viewerCount);
     infoViewers.textContent = room.viewerCount;
-    if (room.duration) {
-      const secs = room.duration;
-      infoDuration.textContent = formatTime(secs);
-    }
   });
 
+  // FIX: o host ignora session-ended se foi ele mesmo que encerrou
   socket.on('session-ended', ({ reason }) => {
-    showEnded(reason);
+    if (!sessionEndedByMe) {
+      showEnded(reason);
+    }
   });
 
   socket.on('error', ({ message }) => {
@@ -174,12 +177,20 @@ function connectSocket() {
   });
 
   socket.on('disconnect', () => {
-    showToast('Conexão perdida. Reconectando...', 'warning');
+    if (!sessionEndedByMe) {
+      showToast('Conexão perdida. Reconectando...', 'warning');
+    }
   });
 }
 
-// ── WebRTC: criar peer para um viewer ───────────────────────────
+// ── WebRTC: criar peer para um viewer ────────────────────────────
 async function createPeerForViewer(viewerId) {
+  // Fecha peer antigo se existir
+  if (peers.has(viewerId)) {
+    peers.get(viewerId).close();
+    peers.delete(viewerId);
+  }
+
   const pc = new RTCPeerConnection(iceConfig);
   peers.set(viewerId, pc);
 
@@ -194,28 +205,51 @@ async function createPeerForViewer(viewerId) {
   };
 
   pc.onconnectionstatechange = () => {
-    console.log(`[Peer ${viewerId}] Estado: ${pc.connectionState}`);
-    if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+    const state = pc.connectionState;
+    console.log(`[Peer ${viewerId}] Estado: ${state}`);
+
+    // FIX: só fecha peer se realmente falhou — não em 'disconnected'
+    // 'disconnected' é temporário durante renegociação ICE
+    if (state === 'failed') {
+      console.warn(`[Peer ${viewerId}] Falha — tentando reconectar`);
       closePeer(viewerId);
+      viewers.delete(viewerId);
+      renderViewers();
     }
+    // 'closed' e 'disconnected' são ignorados — não encerram a sessão
+  };
+
+  pc.onicegatheringstatechange = () => {
+    console.log(`[ICE ${viewerId}] Gathering: ${pc.iceGatheringState}`);
+  };
+
+  pc.onsignalingstatechange = () => {
+    console.log(`[Signaling ${viewerId}] Estado: ${pc.signalingState}`);
   };
 
   return pc;
 }
 
 async function sendOfferToViewer(viewerId) {
-  const pc    = await createPeerForViewer(viewerId);
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  socket.emit('offer', { roomId, offer, targetId: viewerId });
+  try {
+    const pc    = await createPeerForViewer(viewerId);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('offer', { roomId, offer, targetId: viewerId });
+  } catch (e) {
+    console.error('[Offer] Erro ao criar offer para', viewerId, e);
+  }
 }
 
 function closePeer(viewerId) {
   const pc = peers.get(viewerId);
-  if (pc) { pc.close(); peers.delete(viewerId); }
+  if (pc) {
+    pc.close();
+    peers.delete(viewerId);
+  }
 }
 
-// ── Compartilhamento de tela ─────────────────────────────────────
+// ── Compartilhamento de tela ──────────────────────────────────────
 async function startScreenShare() {
   try {
     localStream = await navigator.mediaDevices.getDisplayMedia({
@@ -239,10 +273,11 @@ async function startScreenShare() {
 
     showToast('Transmissão iniciada!', 'success');
 
-    // Quando o usuário para via browser (botão "Stop sharing")
+    // Quando o usuário para pelo botão do navegador
     localStream.getVideoTracks()[0].addEventListener('ended', () => {
       stopScreenShare(false);
     });
+
   } catch (err) {
     if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
       showToast('Permissão negada ou cancelada.', 'warning');
@@ -265,33 +300,27 @@ function stopScreenShare(notify = true) {
   isSharing = false;
   infoStatus.textContent = 'Parado';
 
-  peers.forEach((pc, id) => closePeer(id));
+  peers.forEach((_, id) => closePeer(id));
 
   if (notify) showToast('Compartilhamento de tela pausado.', 'info');
 }
 
-// ── Timer ────────────────────────────────────────────────────────
+// ── Timer ─────────────────────────────────────────────────────────
 function startTimer() {
   if (timerInterval) return;
   sessionStart = sessionStart || Date.now();
   timerInterval = setInterval(() => {
     elapsed = Math.floor((Date.now() - sessionStart) / 1000);
-    const formatted = formatTime(elapsed);
-    videoTimer.textContent = formatted;
+    videoTimer.textContent   = formatTime(elapsed);
     infoDuration.textContent = formatTime(elapsed);
   }, 1000);
 }
 
-// ── UI Helpers ───────────────────────────────────────────────────
+// ── UI Helpers ────────────────────────────────────────────────────
 function updateStatus(status) {
-  if (status === 'live') {
-    statusBadge.style.display  = 'flex';
-    statusWaiting.style.display = 'none';
-    infoStatus.textContent = 'Ao Vivo';
-  } else {
-    statusBadge.style.display  = 'none';
-    statusWaiting.style.display = 'flex';
-  }
+  statusBadge.style.display   = status === 'live' ? 'flex' : 'none';
+  statusWaiting.style.display = status === 'live' ? 'none' : 'flex';
+  infoStatus.textContent      = status === 'live' ? 'Ao Vivo' : 'Aguardando';
 }
 
 function updateViewerCount(count) {
@@ -302,8 +331,7 @@ function updateViewerCount(count) {
 function renderViewers() {
   const count = viewers.size;
   viewersEmpty.style.display = count === 0 ? 'block' : 'none';
-  const existing = viewersList.querySelectorAll('.viewer-item');
-  existing.forEach(el => el.remove());
+  viewersList.querySelectorAll('.viewer-item').forEach(el => el.remove());
   let i = 1;
   viewers.forEach(id => {
     const el = document.createElement('div');
@@ -325,26 +353,26 @@ function showEnded(reason) {
   endedScreen.classList.add('show');
 }
 
-// ── Botões de controle ───────────────────────────────────────────
+// ── Botões ────────────────────────────────────────────────────────
 document.getElementById('btn-start-share').addEventListener('click', startScreenShare);
+
 document.getElementById('ctrl-screen').addEventListener('click', () => {
   isSharing ? stopScreenShare() : startScreenShare();
 });
+
 document.getElementById('ctrl-stop').addEventListener('click', () => {
   document.getElementById('modal-end').classList.add('open');
 });
 
-// Copiar link
 document.getElementById('btn-copy-link').addEventListener('click', () => {
   const link = sessionLinkEl.textContent;
   navigator.clipboard.writeText(link).then(() => {
-    showToast('Link copiado para a área de transferência!', 'success', 3000);
+    showToast('Link copiado!', 'success', 3000);
   }).catch(() => {
     showToast('Não foi possível copiar automaticamente.', 'warning');
   });
 });
 
-// Modal encerrar sessão
 document.getElementById('btn-end-session').addEventListener('click', () => {
   document.getElementById('modal-end').classList.add('open');
 });
@@ -354,7 +382,10 @@ document.getElementById('modal-end-close').addEventListener('click', () => {
 document.getElementById('modal-end-cancel').addEventListener('click', () => {
   document.getElementById('modal-end').classList.remove('open');
 });
+
 document.getElementById('btn-confirm-end').addEventListener('click', () => {
+  // FIX: marca que o próprio host encerrou antes de emitir o evento
+  sessionEndedByMe = true;
   if (socket) socket.emit('end-session', { roomId });
   document.getElementById('modal-end').classList.remove('open');
   showEnded('Você encerrou a sessão.');
@@ -362,13 +393,18 @@ document.getElementById('btn-confirm-end').addEventListener('click', () => {
 
 document.getElementById('btn-new-after-end').addEventListener('click', async () => {
   try {
-    const res  = await fetch('/api/rooms/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const res  = await fetch('/api/rooms/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
     const data = await res.json();
     if (data.success) window.location.href = `/room/${data.roomId}`;
-  } catch(e) { window.location.href = '/'; }
+  } catch(e) {
+    window.location.href = '/';
+  }
 });
 
-// Botões mic/câmera (placeholders — requerem getUserMedia separado)
 document.getElementById('ctrl-mic').addEventListener('click', function() {
   this.classList.toggle('active');
   showToast('Microfone ' + (this.classList.contains('active') ? 'ativado' : 'desativado'), 'info', 2000);
@@ -378,5 +414,5 @@ document.getElementById('ctrl-cam').addEventListener('click', function() {
   showToast('Câmera ' + (this.classList.contains('active') ? 'ativada' : 'desativada'), 'info', 2000);
 });
 
-// ── Inicia ───────────────────────────────────────────────────────
+// ── Inicia ────────────────────────────────────────────────────────
 init();

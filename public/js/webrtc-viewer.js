@@ -19,8 +19,9 @@ function showToast(msg, type = 'info', duration = 4000) {
 const roomId = window.location.pathname.split('/').pop().toUpperCase();
 let socket   = null;
 let pc       = null;
+let hostId   = null; // socket ID do host
 let retries  = 0;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
 
 const iceConfig = {
   iceServers: [
@@ -43,29 +44,30 @@ const stateEnded      = document.getElementById('state-ended');
 const stateError      = document.getElementById('state-error');
 
 function showState(name) {
-  [stateConnecting, stateWaiting, stateNotFound, stateEnded, stateError].forEach(el => {
-    el.classList.remove('active');
-  });
+  [stateConnecting, stateWaiting, stateNotFound, stateEnded, stateError]
+    .forEach(el => el.classList.remove('active'));
+
   const map = {
-    connecting: stateConnecting,
-    waiting:    stateWaiting,
+    connecting:  stateConnecting,
+    waiting:     stateWaiting,
     'not-found': stateNotFound,
-    ended:      stateEnded,
-    error:      stateError
+    ended:       stateEnded,
+    error:       stateError
   };
   if (map[name]) map[name].classList.add('active');
+
+  // Esconde vídeo ao mostrar qualquer tela de estado
   remoteVideo.style.display = 'none';
 }
 
 function showVideo() {
-  [stateConnecting, stateWaiting, stateNotFound, stateEnded, stateError].forEach(el => {
-    el.classList.remove('active');
-  });
+  [stateConnecting, stateWaiting, stateNotFound, stateEnded, stateError]
+    .forEach(el => el.classList.remove('active'));
   remoteVideo.style.display = 'block';
   liveBadge.classList.add('show');
 }
 
-// ── Inicialização ────────────────────────────────────────────────
+// ── Inicialização ─────────────────────────────────────────────────
 async function init() {
   // Personalização
   try {
@@ -85,16 +87,16 @@ async function init() {
         el.style.cssText = 'background:transparent;border:none;padding:0;';
       });
     }
-  } catch (e) { /* sem config */ }
+  } catch (e) {}
 
-  // Verifica se a sala existe antes de conectar
+  // Verifica se a sala existe
   try {
     const res  = await fetch(`/api/rooms/${roomId}/exists`);
     const data = await res.json();
     if (!data.exists) { showState('not-found'); return; }
     if (data.status === 'ended') {
-      showState('ended');
       document.getElementById('ended-reason-viewer').textContent = 'Esta sessão já foi encerrada.';
+      showState('ended');
       return;
     }
     sessionPill.textContent = `ID: ${roomId}`;
@@ -107,38 +109,57 @@ async function init() {
   connectSocket();
 }
 
-// ── Socket.IO ────────────────────────────────────────────────────
+// ── Socket.IO ─────────────────────────────────────────────────────
 function connectSocket() {
-  socket = io();
+  socket = io({ reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 2000 });
 
   socket.on('connect', () => {
     console.log('[Socket] Conectado como viewer');
+    retries = 0;
     socket.emit('viewer-join', { roomId });
   });
 
   socket.on('viewer-joined', ({ status, room }) => {
     viewerCountLbl.textContent = `👥 ${room.viewerCount} visualizando`;
-    if (status === 'live') {
-      showState('waiting');
-    } else {
-      showState('waiting');
-    }
+    // Aguarda o host enviar um offer
+    showState('waiting');
   });
 
   socket.on('offer', async ({ offer, from }) => {
     console.log('[WebRTC] Recebeu offer de', from);
-    await createPeer(from);
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    socket.emit('answer', { roomId, answer, targetId: from });
+    hostId = from;
+    try {
+      await createPeer(from);
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit('answer', { roomId, answer, targetId: from });
+    } catch (e) {
+      console.error('[Offer] Erro ao processar:', e);
+    }
   });
 
   socket.on('ice-candidate', ({ candidate, from }) => {
     if (pc && candidate) {
-      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
-        console.warn('[ICE] Erro ao adicionar candidato:', err);
-      });
+      // FIX: aguarda a descrição remota estar definida antes de adicionar candidatos
+      const addCandidate = () => {
+        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => {
+          console.warn('[ICE] Erro ao adicionar candidato:', err.message);
+        });
+      };
+
+      if (pc.remoteDescription && pc.remoteDescription.type) {
+        addCandidate();
+      } else {
+        // Aguarda até a descrição remota estar pronta
+        const interval = setInterval(() => {
+          if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+            clearInterval(interval);
+            addCandidate();
+          }
+        }, 100);
+        setTimeout(() => clearInterval(interval), 5000);
+      }
     }
   });
 
@@ -147,7 +168,8 @@ function connectSocket() {
   });
 
   socket.on('session-ended', ({ reason }) => {
-    document.getElementById('ended-reason-viewer').textContent = reason || 'A transmissão foi encerrada.';
+    document.getElementById('ended-reason-viewer').textContent =
+      reason || 'A transmissão foi encerrada.';
     showState('ended');
     liveBadge.classList.remove('show');
     if (pc) { pc.close(); pc = null; }
@@ -158,13 +180,18 @@ function connectSocket() {
     showState('error');
   });
 
-  socket.on('disconnect', () => {
-    if (remoteVideo.style.display === 'block') {
-      showToast('Conexão perdida. Reconectando...', 'warning');
-    }
+  socket.on('disconnect', (reason) => {
+    console.warn('[Socket] Desconectado:', reason);
+    // Não muda estado — Socket.IO vai reconectar automaticamente
   });
 
-  socket.on('connect_error', () => {
+  socket.on('reconnect', () => {
+    console.log('[Socket] Reconectado');
+    socket.emit('viewer-join', { roomId });
+  });
+
+  socket.on('connect_error', (err) => {
+    console.warn('[Socket] Erro de conexão:', err.message);
     retries++;
     if (retries >= MAX_RETRIES) {
       showState('error');
@@ -175,45 +202,59 @@ function connectSocket() {
 }
 
 // ── WebRTC Peer ───────────────────────────────────────────────────
-async function createPeer(hostId) {
-  if (pc) { pc.close(); }
+async function createPeer(hId) {
+  // Fecha peer anterior se existir
+  if (pc) {
+    pc.onconnectionstatechange = null;
+    pc.ontrack = null;
+    pc.onicecandidate = null;
+    pc.close();
+    pc = null;
+  }
 
   pc = new RTCPeerConnection(iceConfig);
 
   pc.onicecandidate = ({ candidate }) => {
     if (candidate) {
-      socket.emit('ice-candidate', { roomId, candidate, targetId: hostId });
+      socket.emit('ice-candidate', { roomId, candidate, targetId: hId });
     }
   };
 
   pc.ontrack = (event) => {
-    console.log('[WebRTC] Recebeu track:', event.track.kind);
+    console.log('[WebRTC] Track recebida:', event.track.kind);
     if (event.streams && event.streams[0]) {
       remoteVideo.srcObject = event.streams[0];
       remoteVideo.onloadedmetadata = () => {
-        remoteVideo.play().then(() => {
-          showVideo();
-          showToast('Transmissão conectada!', 'success', 3000);
-        }).catch(e => console.error('[Video] Erro ao reproduzir:', e));
+        remoteVideo.play()
+          .then(() => {
+            showVideo();
+            showToast('Transmissão conectada!', 'success', 3000);
+          })
+          .catch(e => console.error('[Video] Erro ao reproduzir:', e));
       };
     }
   };
 
   pc.onconnectionstatechange = () => {
-    console.log('[Peer] Estado:', pc.connectionState);
-    if (pc.connectionState === 'connected') {
+    const state = pc.connectionState;
+    console.log('[Peer] Estado:', state);
+
+    if (state === 'connected') {
       showToast('Conectado à transmissão', 'success', 2000);
     }
-    if (pc.connectionState === 'failed') {
+
+    // FIX: 'disconnected' é temporário — NÃO encerra nem muda estado
+    // Apenas 'failed' indica erro real
+    if (state === 'failed') {
+      console.warn('[Peer] Falha na conexão WebRTC');
       showState('error');
       document.getElementById('error-msg-viewer').textContent =
-        'Falha na conexão com o host. Tente recarregar a página.';
+        'Falha na conexão. Tente recarregar a página.';
     }
-    if (pc.connectionState === 'disconnected') {
-      showState('waiting');
-      liveBadge.classList.remove('show');
-      showToast('Transmissão interrompida. Aguardando reconexão...', 'warning');
-    }
+  };
+
+  pc.onsignalingstatechange = () => {
+    console.log('[Signaling] Estado:', pc.signalingState);
   };
 }
 
@@ -221,9 +262,11 @@ async function createPeer(hostId) {
 function toggleFullscreen() {
   const wrap = document.getElementById('viewer-video-wrap');
   if (!document.fullscreenElement) {
-    (wrap.requestFullscreen || wrap.webkitRequestFullscreen || wrap.mozRequestFullScreen).call(wrap);
+    const fn = wrap.requestFullscreen || wrap.webkitRequestFullscreen || wrap.mozRequestFullScreen;
+    if (fn) fn.call(wrap);
   } else {
-    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+    const fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+    if (fn) fn.call(document);
   }
 }
 
@@ -243,13 +286,14 @@ document.getElementById('btn-pip').addEventListener('click', async () => {
   }
 });
 
-// Retry
+// Retry manual
 document.getElementById('btn-retry-viewer').addEventListener('click', () => {
   retries = 0;
   showState('connecting');
-  if (socket) { socket.disconnect(); }
-  connectSocket();
+  if (socket) { socket.disconnect(); socket = null; }
+  if (pc) { pc.close(); pc = null; }
+  setTimeout(connectSocket, 500);
 });
 
-// ── Inicia ───────────────────────────────────────────────────────
+// ── Inicia ────────────────────────────────────────────────────────
 init();
