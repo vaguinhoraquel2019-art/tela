@@ -23,41 +23,26 @@ let hostId   = null; // socket ID do host
 let retries  = 0;
 const MAX_RETRIES = 5;
 
-// ICE servers — STUN + TURN públicos para funcionar entre redes diferentes
-const iceConfig = {
-  iceServers: [
-    // STUN do Google
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    // STUN Cloudflare
-    { urls: 'stun:stun.cloudflare.com:3478' },
-    // TURN público Open Relay (Metered)
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    // TURN Numb (fallback)
-    {
-      urls: 'turn:numb.viagenie.ca',
-      username: 'webrtc@live.com',
-      credential: 'muazkh'
-    }
-  ],
-  iceCandidatePoolSize: 10
-};
+// ICE servers — carregados dinamicamente do servidor
+let iceConfig = { iceServers: [], iceCandidatePoolSize: 10 };
+
+async function loadIceServers() {
+  try {
+    const res = await fetch('/api/ice-servers');
+    const servers = await res.json();
+    iceConfig = { iceServers: servers, iceCandidatePoolSize: 10 };
+    console.log('[ICE] Servidores carregados:', servers.length);
+  } catch(e) {
+    console.warn('[ICE] Usando fallback padrão');
+    iceConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ],
+      iceCandidatePoolSize: 10
+    };
+  }
+}
 
 // ── DOM ──────────────────────────────────────────────────────────
 const remoteVideo    = document.getElementById('remoteVideo');
@@ -134,6 +119,7 @@ async function init() {
   }
 
   showState('connecting');
+  await loadIceServers();
   connectSocket();
 }
 

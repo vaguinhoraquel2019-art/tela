@@ -381,6 +381,56 @@ app.delete('/api/admin/roles/:id', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// ─── API: ICE Servers (TURN dinâmico) ────────────────────────────────────────
+app.get('/api/ice-servers', async (req, res) => {
+  // Se tiver credenciais do Metered configuradas, usa elas
+  const meteredApiKey = process.env.METERED_API_KEY;
+  const meteredDomain = process.env.METERED_DOMAIN;
+
+  if (meteredApiKey && meteredDomain) {
+    try {
+      const https = require('https');
+      const url = `https://${meteredDomain}/api/v1/turn/credentials?apiKey=${meteredApiKey}`;
+      const data = await new Promise((resolve, reject) => {
+        https.get(url, (r) => {
+          let body = '';
+          r.on('data', chunk => body += chunk);
+          r.on('end', () => {
+            try { resolve(JSON.parse(body)); }
+            catch(e) { reject(e); }
+          });
+        }).on('error', reject);
+      });
+      return res.json(data);
+    } catch(e) {
+      console.error('[TURN] Erro ao buscar credenciais Metered:', e.message);
+    }
+  }
+
+  // Fallback: STUN + TURN públicos
+  res.json([
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ]);
+});
+
 // ─── Socket.IO ───────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[Socket] Conectado: ${socket.id}`);
