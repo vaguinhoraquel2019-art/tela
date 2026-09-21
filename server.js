@@ -291,6 +291,22 @@ app.delete('/api/admin/users/:username', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+app.put('/api/admin/users/:username/role', requireAdmin, (req, res) => {
+  const user = users.get(req.params.username);
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+  const { roleId } = req.body;
+  if (roleId) {
+    const role = roles.get(roleId);
+    if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
+    user.roleId   = roleId;
+    user.roleName = role.name;
+  } else {
+    user.roleId   = null;
+    user.roleName = null;
+  }
+  res.json({ success: true });
+});
+
 app.get('/api/admin/config', requireAdmin, (req, res) => {
   res.json(siteConfig);
 });
@@ -349,17 +365,18 @@ app.post('/api/admin/roles', requireAdmin, (req, res) => {
 app.put('/api/admin/roles/:id', requireAdmin, (req, res) => {
   const role = roles.get(req.params.id);
   if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
-  const { name, color, permissions } = req.body;
-  if (name)        role.name        = name.trim();
-  if (color)       role.color       = color;
-  if (permissions) role.permissions = { ...role.permissions, ...permissions };
+  const { name, color, permissions, isDefault } = req.body;
+  if (name)                    role.name        = name.trim();
+  if (color)                   role.color       = color;
+  if (permissions)             role.permissions = { ...role.permissions, ...permissions };
+  if (isDefault !== undefined) role.isDefault   = isDefault;
   res.json({ success: true, role });
 });
 
 app.delete('/api/admin/roles/:id', requireAdmin, (req, res) => {
   const role = roles.get(req.params.id);
   if (!role) return res.status(404).json({ error: 'Cargo não encontrado' });
-  if (role.isDefault) return res.status(403).json({ error: 'Cargos padrão não podem ser removidos' });
+  // Permite deletar qualquer cargo, inclusive padrão (já confirmado no cliente)
   roles.delete(req.params.id);
   res.json({ success: true });
 });

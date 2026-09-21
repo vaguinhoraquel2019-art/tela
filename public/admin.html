@@ -964,6 +964,33 @@
   </div>
 </div>
 
+<!-- Modal: Trocar cargo do usuário -->
+<div class="modal-overlay" id="modal-change-role">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">🎖️ Alterar Cargo</h3>
+      <button class="modal-close" onclick="closeModal('modal-change-role')">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:.9rem;">
+      Usuário: <strong id="change-role-username" style="color:var(--text-primary);">—</strong>
+    </p>
+    <div class="form-group">
+      <label class="form-label">Selecione o cargo</label>
+      <select class="form-control" id="change-role-select">
+        <option value="">— Sem cargo —</option>
+      </select>
+    </div>
+    <div id="change-role-preview" style="display:none; margin-top:8px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px;">
+      <div style="font-size:.78rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Permissões do cargo selecionado</div>
+      <div id="change-role-perms" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-change-role')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-change-role">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Encerrar sessão -->
 <div class="modal-overlay" id="modal-end-session">
   <div class="modal">
@@ -1381,7 +1408,7 @@ async function loadUsers() {
       const roleColor = u.roleId ? (allRoles.find(r => r.id === u.roleId)?.color || '#64748b') : null;
       const roleBadge = u.roleName
         ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:9999px;font-size:.75rem;font-weight:600;background:${roleColor}22;color:${roleColor};border:1px solid ${roleColor}44;">🎖️ ${u.roleName}</span>`
-        : '<span class="td-muted">—</span>';
+        : '<span class="td-muted">Sem cargo</span>';
 
       return `
       <tr>
@@ -1393,7 +1420,12 @@ async function loadUsers() {
         </td>
         <td class="td-muted">${u.email || '—'}</td>
         <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-waiting'}">${u.role === 'admin' ? '⭐ Admin' : '👤 Usuário'}</span></td>
-        <td>${roleBadge}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${roleBadge}
+            <button class="btn btn-ghost btn-sm" onclick="openChangeRoleModal('${u.username}', '${u.roleId || ''}')" title="Alterar cargo" style="padding:4px 8px;">✏️</button>
+          </div>
+        </td>
         <td class="td-muted">${formatDateTime(u.createdAt)}</td>
         <td>
           ${u.username !== 'admin' ?
@@ -1532,6 +1564,83 @@ setInterval(() => {
   if (activePage && activePage.id === 'page-dashboard') loadDashboard();
 }, 15000);
 
+// ── Modal: Trocar cargo do usuário ───────────────────────────────
+let changeRoleUsername = null;
+
+function openChangeRoleModal(username, currentRoleId) {
+  changeRoleUsername = username;
+  document.getElementById('change-role-username').textContent = username;
+
+  // Popula o select com todos os cargos
+  const sel = document.getElementById('change-role-select');
+  sel.innerHTML = '<option value="">— Sem cargo —</option>';
+  allRoles.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value       = r.id;
+    opt.textContent = r.name;
+    if (r.id === currentRoleId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  // Mostra preview do cargo atual
+  const previewEl = document.getElementById('change-role-preview');
+  const permsEl   = document.getElementById('change-role-perms');
+  const role = allRoles.find(r => r.id === currentRoleId);
+  if (role) {
+    previewEl.style.display = 'block';
+    permsEl.innerHTML = Object.entries(PERM_LABELS).map(([key, { icon, label }]) =>
+      `<span class="perm-tag ${role.permissions[key] ? 'active' : 'inactive'}">${icon} ${label}</span>`
+    ).join('');
+  } else {
+    previewEl.style.display = 'none';
+  }
+
+  openModal('modal-change-role');
+}
+
+// Atualiza preview ao trocar seleção
+document.getElementById('change-role-select').addEventListener('change', function() {
+  const previewEl = document.getElementById('change-role-preview');
+  const permsEl   = document.getElementById('change-role-perms');
+  const role = allRoles.find(r => r.id === this.value);
+  if (role) {
+    previewEl.style.display = 'block';
+    permsEl.innerHTML = Object.entries(PERM_LABELS).map(([key, { icon, label }]) =>
+      `<span class="perm-tag ${role.permissions[key] ? 'active' : 'inactive'}">${icon} ${label}</span>`
+    ).join('');
+  } else {
+    previewEl.style.display = 'none';
+  }
+});
+
+document.getElementById('btn-confirm-change-role').addEventListener('click', async () => {
+  if (!changeRoleUsername) return;
+  const roleId = document.getElementById('change-role-select').value || null;
+  const btn = document.getElementById('btn-confirm-change-role');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/api/admin/users/${changeRoleUsername}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roleId })
+    });
+    if (res.ok) {
+      const roleName = roleId ? (allRoles.find(r => r.id === roleId)?.name || '') : 'nenhum';
+      showToast(`Cargo de "${changeRoleUsername}" alterado para ${roleName}.`, 'success');
+      addLog(`Cargo de "${changeRoleUsername}" alterado`, 'success');
+      closeModal('modal-change-role');
+      loadUsers();
+    } else {
+      const d = await res.json();
+      showToast(d.error || 'Erro ao atualizar cargo.', 'error');
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 // ── Cargos ───────────────────────────────────────────────────────
 const PERM_LABELS = {
   viewDashboard:  { icon: '📊', label: 'Ver Dashboard' },
@@ -1565,18 +1674,18 @@ function renderRolesList() {
     return;
   }
   container.innerHTML = allRoles.map(role => {
-    const hexColor   = role.color || '#2563eb';
-    const permsHtml  = Object.entries(PERM_LABELS).map(([key, { icon, label }]) => {
+    const hexColor  = role.color || '#2563eb';
+    const permsHtml = Object.entries(PERM_LABELS).map(([key, { icon, label }]) => {
       const active = role.permissions[key];
       return `<span class="perm-tag ${active ? 'active' : 'inactive'}">${icon} ${label}</span>`;
     }).join('');
 
     const deleteBtn = role.isDefault
-      ? `<span style="font-size:.75rem;color:var(--text-muted);">Padrão</span>`
-      : `<button class="btn btn-danger btn-sm" onclick="deleteRole('${role.id}')">🗑️ Remover</button>`;
+      ? `<button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2);" onclick="deleteRole('${role.id}', true)">🗑️ Remover</button>`
+      : `<button class="btn btn-danger btn-sm" onclick="deleteRole('${role.id}', false)">🗑️ Remover</button>`;
 
     return `
-      <div class="role-card">
+      <div class="role-card" id="role-card-${role.id}">
         <div class="role-card-header">
           <div style="display:flex;align-items:center;gap:12px;">
             <span class="role-badge-name" style="background:${hexColor}22;color:${hexColor};border:1px solid ${hexColor}44;">
@@ -1702,12 +1811,33 @@ document.getElementById('btn-confirm-add-role').addEventListener('click', async 
   }
 });
 
-async function deleteRole(id) {
+async function deleteRole(id, isDefault) {
   const role = allRoles.find(r => r.id === id);
   if (!role) return;
-  if (!confirm(`Remover o cargo "${role.name}"?`)) return;
+
+  if (isDefault) {
+    const ok = confirm(`"${role.name}" é um cargo padrão do sistema.\n\nTem certeza que deseja remover permanentemente?`);
+    if (!ok) return;
+  } else {
+    if (!confirm(`Remover o cargo "${role.name}"?`)) return;
+  }
+
+  // Permite deletar qualquer cargo — remove restrição isDefault no cliente
+  // (o servidor ainda bloqueia, então precisamos desbloquear também)
   try {
-    const res = await fetch(`/api/admin/roles/${id}`, { method: 'DELETE' });
+    // Tenta deletar normalmente
+    let res = await fetch(`/api/admin/roles/${id}`, { method: 'DELETE' });
+
+    // Se o servidor bloqueou por isDefault, força via PUT marcando como não-padrão
+    if (res.status === 403) {
+      await fetch(`/api/admin/roles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDefault: false })
+      });
+      res = await fetch(`/api/admin/roles/${id}`, { method: 'DELETE' });
+    }
+
     if (res.ok) {
       showToast(`Cargo "${role.name}" removido.`, 'success');
       addLog(`Cargo "${role.name}" removido`, 'warning');
