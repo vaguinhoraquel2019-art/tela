@@ -192,6 +192,7 @@ function requireOwner(req, res, next) {
 // ─── Rotas de páginas ────────────────────────────────────────────────────────
 app.get('/',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/login',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/register',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'register.html')));
 app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/room/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
 app.get('/view/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'viewer.html')));
@@ -200,6 +201,41 @@ app.get('/view/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 
 app.get('/api/config', (req, res) => {
   const { orgName, orgLogo, primaryColor, accentColor, bgColor, tagline, description } = siteConfig;
   res.json({ orgName, orgLogo, primaryColor, accentColor, bgColor, tagline, description, isChildSite: IS_CHILD_SITE });
+});
+
+// ─── API: Registro público ────────────────────────────────────────────────────
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, email } = req.body;
+
+  if (!username || !password)
+    return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
+
+  if (!/^[a-zA-Z0-9_]+$/.test(username))
+    return res.status(400).json({ error: 'Nome de usuário inválido. Use apenas letras, números e _' });
+
+  if (username.length < 3 || username.length > 30)
+    return res.status(400).json({ error: 'Usuário deve ter entre 3 e 30 caracteres' });
+
+  if (password.length < 6)
+    return res.status(400).json({ error: 'Senha deve ter ao menos 6 caracteres' });
+
+  if (users.has(username))
+    return res.status(409).json({ error: 'Este nome de usuário já está em uso' });
+
+  users.set(username, {
+    id:        uuidv4(),
+    username,
+    password:  bcrypt.hashSync(password, 10),
+    role:      'user',
+    roleId:    null,
+    roleName:  null,
+    isOwner:   false,
+    email:     email || '',
+    createdAt: new Date().toISOString()
+  });
+
+  console.log(`[Register] Novo usuário: ${username}`);
+  res.json({ success: true });
 });
 
 // ─── API: Autenticação ───────────────────────────────────────────────────────

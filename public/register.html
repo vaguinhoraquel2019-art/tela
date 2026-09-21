@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar Conta — SEU NOME AQUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: var(--bg-base);
+    }
+    .register-wrap {
+      width: 100%;
+      max-width: 440px;
+    }
+    .register-logo {
+      width: 56px; height: 56px;
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .65rem; font-weight: 700; color: #fff;
+      text-align: center; line-height: 1.3;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 30px rgba(37,99,235,.4);
+      overflow: hidden;
+    }
+    .register-logo img { width:100%; height:100%; object-fit:contain; }
+    .register-header { text-align: center; margin-bottom: 32px; }
+    .register-header h2 { font-size: 1.6rem; margin-bottom: 6px; }
+    .register-header p  { font-size: .88rem; color: var(--text-muted); }
+
+    .input-icon-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 1rem; pointer-events: none;
+    }
+    .input-with-icon { padding-left: 42px !important; }
+    .input-toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted);
+      font-size: .9rem; cursor: pointer; padding: 4px;
+      transition: color var(--transition);
+    }
+    .input-toggle-pw:hover { color: var(--text-primary); }
+
+    .register-error {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: .88rem;
+      color: #fca5a5;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .register-error.show { display: flex; }
+
+    .register-success {
+      background: rgba(16,185,129,.1);
+      border: 1px solid rgba(16,185,129,.25);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: .9rem;
+      color: #6ee7b7;
+      margin-bottom: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      text-align: center;
+    }
+    .register-success.show { display: flex; }
+
+    .password-strength {
+      margin-top: 8px;
+      display: none;
+    }
+    .password-strength.show { display: block; }
+    .strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .strength-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .3s, background .3s;
+    }
+    .strength-label { font-size: .75rem; color: var(--text-muted); }
+
+    .register-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+    .register-footer a { color: var(--primary-light); }
+
+    .page-footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="register-wrap">
+
+  <!-- Logo -->
+  <div class="register-logo" id="reg-logo">SUA<br>LOGO<br>AQUI</div>
+
+  <!-- Header -->
+  <div class="register-header">
+    <h2>Criar sua conta</h2>
+    <p id="reg-org-name">SEU NOME AQUI</p>
+  </div>
+
+  <!-- Erro -->
+  <div class="register-error" id="reg-error">
+    <span>⚠️</span>
+    <span id="reg-error-msg">Erro ao criar conta.</span>
+  </div>
+
+  <!-- Sucesso -->
+  <div class="register-success" id="reg-success">
+    <span style="font-size:1.5rem;">✅</span>
+    <strong>Conta criada com sucesso!</strong>
+    <span style="font-size:.88rem;">Redirecionando para o login...</span>
+  </div>
+
+  <!-- Formulário -->
+  <form id="register-form" autocomplete="on">
+
+    <div class="form-group">
+      <label class="form-label" for="reg-username">Usuário</label>
+      <div class="input-icon-wrap">
+        <span class="input-icon">👤</span>
+        <input
+          type="text"
+          id="reg-username"
+          class="form-control input-with-icon"
+          placeholder="Escolha um nome de usuário"
+          required
+          autocomplete="username"
+          maxlength="30"
+        />
+      </div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">
+        Apenas letras, números e _ (sem espaços)
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="reg-email">E-mail (opcional)</label>
+      <div class="input-icon-wrap">
+        <span class="input-icon">✉️</span>
+        <input
+          type="email"
+          id="reg-email"
+          class="form-control input-with-icon"
+          placeholder="seu@email.com"
+          autocomplete="email"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="reg-password">Senha</label>
+      <div class="input-icon-wrap">
+        <span class="input-icon">🔒</span>
+        <input
+          type="password"
+          id="reg-password"
+          class="form-control input-with-icon"
+          placeholder="Mínimo 6 caracteres"
+          required
+          autocomplete="new-password"
+          maxlength="64"
+          style="padding-right:44px;"
+        />
+        <button type="button" class="input-toggle-pw" id="toggle-pw1" aria-label="Mostrar senha">👁️</button>
+      </div>
+      <!-- Barra de força da senha -->
+      <div class="password-strength" id="pw-strength">
+        <div class="strength-bar">
+          <div class="strength-fill" id="strength-fill" style="width:0%;background:var(--danger);"></div>
+        </div>
+        <div class="strength-label" id="strength-label">—</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="reg-confirm">Confirmar Senha</label>
+      <div class="input-icon-wrap">
+        <span class="input-icon">🔒</span>
+        <input
+          type="password"
+          id="reg-confirm"
+          class="form-control input-with-icon"
+          placeholder="Repita a senha"
+          required
+          autocomplete="new-password"
+          maxlength="64"
+          style="padding-right:44px;"
+        />
+        <button type="button" class="input-toggle-pw" id="toggle-pw2" aria-label="Mostrar senha">👁️</button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-register" style="margin-top:8px;">
+      Criar Conta
+    </button>
+  </form>
+
+  <div class="register-footer">
+    Já tem uma conta? <a href="/login">Entrar</a>
+    &nbsp;·&nbsp;
+    <a href="/">← Início</a>
+  </div>
+
+  <div class="page-footer">
+    <span id="reg-copy-name">SEU NOME AQUI</span> © <span id="reg-year"></span>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+document.getElementById('reg-year').textContent = new Date().getFullYear();
+
+// Personalização
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    if (cfg.orgName) {
+      document.title = `Criar Conta — ${cfg.orgName}`;
+      document.querySelectorAll('#reg-org-name, #reg-copy-name').forEach(e => e.textContent = cfg.orgName);
+    }
+    if (cfg.primaryColor) {
+      document.documentElement.style.setProperty('--primary', cfg.primaryColor);
+      document.documentElement.style.setProperty('--primary-dark', cfg.accentColor || cfg.primaryColor);
+    }
+    if (cfg.orgLogo) {
+      const el = document.getElementById('reg-logo');
+      el.innerHTML = `<img src="${cfg.orgLogo}" alt="Logo" />`;
+      el.style.cssText = 'background:transparent;border:none;padding:0;box-shadow:none;';
+    }
+  } catch(e) {}
+}
+loadConfig();
+
+// Toast
+function showToast(msg, type = 'info', duration = 4000) {
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut .3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+// Toggle senha
+document.getElementById('toggle-pw1').addEventListener('click', function() {
+  const input = document.getElementById('reg-password');
+  const show  = input.type === 'password';
+  input.type  = show ? 'text' : 'password';
+  this.textContent = show ? '🙈' : '👁️';
+});
+document.getElementById('toggle-pw2').addEventListener('click', function() {
+  const input = document.getElementById('reg-confirm');
+  const show  = input.type === 'password';
+  input.type  = show ? 'text' : 'password';
+  this.textContent = show ? '🙈' : '👁️';
+});
+
+// Força da senha
+document.getElementById('reg-password').addEventListener('input', function() {
+  const val = this.value;
+  const strengthEl = document.getElementById('pw-strength');
+  const fillEl     = document.getElementById('strength-fill');
+  const labelEl    = document.getElementById('strength-label');
+
+  if (!val) { strengthEl.classList.remove('show'); return; }
+  strengthEl.classList.add('show');
+
+  let score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { pct: '20%', color: '#ef4444', label: 'Muito fraca' },
+    { pct: '40%', color: '#f97316', label: 'Fraca' },
+    { pct: '60%', color: '#f59e0b', label: 'Média' },
+    { pct: '80%', color: '#84cc16', label: 'Forte' },
+    { pct: '100%', color: '#10b981', label: 'Muito forte' }
+  ];
+  const level = levels[Math.min(score - 1, 4)] || levels[0];
+  fillEl.style.width      = level.pct;
+  fillEl.style.background = level.color;
+  labelEl.textContent     = level.label;
+  labelEl.style.color     = level.color;
+});
+
+// Validação de usuário em tempo real
+document.getElementById('reg-username').addEventListener('input', function() {
+  const val = this.value;
+  const valid = /^[a-zA-Z0-9_]+$/.test(val);
+  this.style.borderColor = val && !valid ? 'var(--danger)' : '';
+});
+
+// Submit
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const errorBox = document.getElementById('reg-error');
+  const errorMsg = document.getElementById('reg-error-msg');
+  const successEl = document.getElementById('reg-success');
+  errorBox.classList.remove('show');
+
+  const username = document.getElementById('reg-username').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+  const btn      = document.getElementById('btn-register');
+
+  // Validações
+  if (!username) { errorMsg.textContent = 'Informe um nome de usuário.'; errorBox.classList.add('show'); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    errorMsg.textContent = 'Usuário inválido. Use apenas letras, números e _.';
+    errorBox.classList.add('show'); return;
+  }
+  if (password.length < 6) {
+    errorMsg.textContent = 'A senha deve ter ao menos 6 caracteres.';
+    errorBox.classList.add('show'); return;
+  }
+  if (password !== confirm) {
+    errorMsg.textContent = 'As senhas não coincidem.';
+    errorBox.classList.add('show'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>&ensp;Criando conta...';
+
+  try {
+    const res  = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, email })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      document.getElementById('register-form').style.display = 'none';
+      successEl.classList.add('show');
+      setTimeout(() => { window.location.href = '/login'; }, 2000);
+    } else {
+      errorMsg.textContent = data.error || 'Erro ao criar conta.';
+      errorBox.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = 'Criar Conta';
+    }
+  } catch(err) {
+    errorMsg.textContent = 'Erro de conexão. Tente novamente.';
+    errorBox.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Criar Conta';
+  }
+});
+</script>
+</body>
+</html>
