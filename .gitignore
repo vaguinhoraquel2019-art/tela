@@ -29,3 +29,6 @@ logs/
 # Build
 dist/
 build/
+
+# Dados persistentes (configurações salvas pelo admin)
+data/

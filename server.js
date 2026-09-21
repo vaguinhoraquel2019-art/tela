@@ -7,6 +7,7 @@ const session = require('express-session');
 const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -126,19 +127,46 @@ users.set('admin', {
   createdAt: new Date().toISOString()
 });
 
-// Configurações do site (personalizáveis)
-let siteConfig = {
-  orgName:      'SEU NOME AQUI',
-  orgLogo:      null,
-  primaryColor: '#2563eb',
-  accentColor:  '#1d4ed8',
-  bgColor:      '#0f172a',
-  tagline:      'Conectando pessoas onde você estiver.',
-  description:  'Compartilhamento de tela simples, seguro e totalmente personalizado para a sua organização.',
-  allowGuests:  true,
-  maxViewers:   50,
-  sessionTimeout: 120
+// ─── Configurações persistentes ──────────────────────────────────────────────
+const CONFIG_FILE = path.join(__dirname, 'data', 'config.json');
+
+const defaultConfig = {
+  orgName:         process.env.ORG_NAME        || 'SEU NOME AQUI',
+  orgLogo:         process.env.ORG_LOGO        || null,
+  primaryColor:    process.env.PRIMARY_COLOR   || '#2563eb',
+  accentColor:     process.env.ACCENT_COLOR    || '#1d4ed8',
+  bgColor:         '#0f172a',
+  tagline:         process.env.ORG_TAGLINE     || 'Conectando pessoas onde você estiver.',
+  description:     process.env.ORG_DESCRIPTION || 'Compartilhamento de tela simples, seguro e totalmente personalizado para a sua organização.',
+  allowGuests:     true,
+  maxViewers:      50,
+  sessionTimeout:  120
 };
+
+function loadSiteConfig() {
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+      return { ...defaultConfig, ...JSON.parse(raw) };
+    }
+  } catch(e) {
+    console.warn('[Config] Erro ao ler config.json, usando padrão:', e.message);
+  }
+  return { ...defaultConfig };
+}
+
+function saveSiteConfig(cfg) {
+  try {
+    const dir = path.dirname(CONFIG_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
+  } catch(e) {
+    console.warn('[Config] Erro ao salvar config.json:', e.message);
+  }
+}
+
+let siteConfig = loadSiteConfig();
+console.log(`[Config] Organização: ${siteConfig.orgName}`);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function createRoom(hostId, hostName) {
@@ -361,6 +389,7 @@ app.get('/api/admin/config', requireAdmin, (req, res) => {
 
 app.put('/api/admin/config', requireAdmin, (req, res) => {
   siteConfig = { ...siteConfig, ...req.body };
+  saveSiteConfig(siteConfig);
   res.json({ success: true, config: siteConfig });
 });
 
