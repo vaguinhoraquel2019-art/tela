@@ -223,6 +223,15 @@ app.get('/register',  (req, res) => res.sendFile(path.join(__dirname, 'public', 
 app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/room/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
 app.get('/view/:id',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'viewer.html')));
+app.get('/download',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'download.html')));
+app.get('/download/app', (req, res) => {
+  const apk = path.join(__dirname, 'public', 'assets', 'ScreenShare.apk');
+  if (fs.existsSync(apk)) {
+    res.download(apk, 'ScreenShare.apk');
+  } else {
+    res.status(404).json({ error: 'APK não encontrado' });
+  }
+});
 
 // ─── API: Configurações públicas ─────────────────────────────────────────────
 app.get('/api/config', (req, res) => {

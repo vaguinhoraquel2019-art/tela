@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baixar App — SEU NOME AQUI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: var(--bg-base);
+    }
+    .download-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 40px 36px;
+      text-align: center;
+    }
+    .app-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--primary);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 40px rgba(37,99,235,.4);
+    }
+    .app-name {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .app-version {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .app-desc {
+      font-size: .95rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .download-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 16px 32px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-decoration: none;
+      transition: all .2s;
+      box-shadow: 0 4px 20px rgba(37,99,235,.4);
+    }
+    .download-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(37,99,235,.5);
+    }
+    .download-btn:active {
+      transform: translateY(0);
+    }
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 28px 0;
+      text-align: left;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .9rem;
+      color: var(--text-secondary);
+    }
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .install-steps {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .install-steps h4 {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 12px;
+    }
+    .install-steps ol {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .install-steps li {
+      font-size: .85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .size-info {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+    .android-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16,185,129,.1);
+      border: 1px solid rgba(16,185,129,.2);
+      color: var(--success);
+      border-radius: var(--radius-full);
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="download-card">
+
+  <!-- Logo -->
+  <div class="app-icon" id="app-icon">📱</div>
+
+  <!-- Badge Android -->
+  <div class="android-badge">🤖 Android</div>
+
+  <!-- Nome e versão -->
+  <div class="app-name" id="app-org-name">SEU NOME AQUI</div>
+  <div class="app-version">App de Compartilhamento de Tela • v1.0</div>
+
+  <!-- Descrição -->
+  <p class="app-desc">
+    Inicie sessões de compartilhamento de tela diretamente pelo celular.
+    Conecte-se ao sistema e transmita para qualquer pessoa pelo link.
+  </p>
+
+  <!-- Funcionalidades -->
+  <div class="features">
+    <div class="feature-item">
+      <div class="feature-icon">▶️</div>
+      <span>Inicie sessões de transmissão pelo celular</span>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🔗</div>
+      <span>Gera link automático para espectadores</span>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">👥</div>
+      <span>Veja quantas pessoas estão assistindo</span>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🔒</div>
+      <span>Conexão segura com o servidor</span>
+    </div>
+  </div>
+
+  <!-- Botão de download -->
+  <a href="/download/app" class="download-btn" id="btn-download">
+    ⬇️&ensp;Baixar APK
+  </a>
+  <div class="size-info" id="size-info">Tamanho: ~9 MB • Android 6.0+</div>
+
+  <!-- Instruções de instalação -->
+  <div class="install-steps">
+    <h4>Como instalar</h4>
+    <ol>
+      <li>Toque em <strong>Baixar APK</strong> acima</li>
+      <li>Após o download, abra o arquivo</li>
+      <li>Se aparecer aviso, toque em <strong>Configurações</strong></li>
+      <li>Ative <strong>"Permitir desta fonte"</strong></li>
+      <li>Volte e toque em <strong>Instalar</strong></li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+function showToast(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.style.animation = 'slideOut .3s ease forwards'; setTimeout(() => el.remove(), 300); }, 4000);
+}
+
+// Personalização
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    if (cfg.orgName) {
+      document.title = `Baixar App — ${cfg.orgName}`;
+      document.getElementById('app-org-name').textContent = cfg.orgName;
+    }
+    if (cfg.primaryColor) {
+      document.documentElement.style.setProperty('--primary', cfg.primaryColor);
+      document.documentElement.style.setProperty('--primary-dark', cfg.accentColor || cfg.primaryColor);
+    }
+    if (cfg.orgLogo) {
+      const icon = document.getElementById('app-icon');
+      icon.innerHTML = `<img src="${cfg.orgLogo}" style="width:60px;height:60px;object-fit:contain;" />`;
+      icon.style.background = 'transparent';
+    }
+  } catch(e) {}
+}
+loadConfig();
+
+// Feedback ao clicar em baixar
+document.getElementById('btn-download').addEventListener('click', function() {
+  showToast('Download iniciado!', 'success');
+  setTimeout(() => showToast('Abra o arquivo APK para instalar.', 'info'), 2000);
+});
+</script>
+</body>
+</html>
