@@ -61,6 +61,7 @@ set "DESK=%USERPROFILE%\Desktop"
 
 if exist "%APK%" (
     copy "%APK%" "%DESK%\ScreenShare.apk" >nul
+    copy "%APK%" "C:\Users\Wagner AMD\Downloads\tela\public\assets\ScreenShare.apk" >nul
     color 0A
     echo.
     echo ======================================================
